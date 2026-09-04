@@ -118,6 +118,13 @@ the sliders can reach produces finite, non-negative balances.
 - Charts are keyboard navigable (arrows, Home/End, shift for a bigger step) and
   described for screen readers. On touch a readout stays put until you tap
   somewhere else, rather than vanishing when your finger lifts.
+- Up and down nudge any number field by exactly what its own slider moves, with
+  shift for ten of those, so the thumb and the number can never drift apart — a
+  range input snaps whatever you assign it onto its step grid, and a half-notch
+  nudge would leave the thumb pointing at a figure the field isn't showing. The
+  eight fields with no slider fall back to $500, a year, or 0.1 of a point. The
+  step lands on a multiple of itself, so 96,300 goes to 100,000 rather than
+  101,300.
 
 ## Not advice
 
