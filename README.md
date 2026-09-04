@@ -25,6 +25,7 @@ requests, no tracking. Works the same opened from disk as it does served.
 | **What it costs to hold** | Year by year: deductible interest and principal below the line, income and tax saved above it. |
 | **Margin-call risk** | How often a call arrives, how far the gearing gets, and what settling one costs. |
 | **Good debt vs bad debt** | For recycling: the balance barely moves, and what changes is how much of it is working. |
+| **What a rate rise does** | Borrowing rates and inflation can step once, at a year you pick, and hold there. |
 
 The headline is measured **after closing the position** — sell up, pay capital
 gains tax on the discounted gain at your marginal rate, clear the debt — with
@@ -91,6 +92,17 @@ A few details that are easy to get wrong and are done properly here:
 - **A year that cannot pay its own interest sells units**, realising a gain and
   shrinking the position. Last year's capital gains tax is paid out of this
   year's cash, as it is in life.
+- **A rate step re-amortises the loan.** When a home loan's rate moves the
+  lender works out a new minimum on the remaining term. That figure is taken
+  from the schedule the loan would be on had only the minimum ever been paid,
+  so both ledgers are held to the same commitment — take it from each side's
+  own balance instead and the comparison tilts towards whichever had paid the
+  loan down faster.
+- **One inflation path.** The tax indexation, the indexed spare cash and the
+  today's-money deflator all read the same compounded path, so a stepped
+  inflation rate cannot leave them discounting on different assumptions.
+- **Pay rises are a cash figure**, not a rise on top of inflation. The field
+  says so and reports what it leaves you in real terms.
 
 ## Tests
 
@@ -101,17 +113,25 @@ The engine is pure — no DOM, no globals — and sits between `engine:start` an
 node test.js index.html
 ```
 
-100 assertions covering the tax scale against hand-worked figures, the
+136 assertions covering the tax scale against hand-worked figures, the
 surcharge add-back, both ledgers agreeing when gearing is zero, the debt
 invariants of recycling, margin calls and wipe-outs, the monotonicity the
 break-even bisection depends on, Monte Carlo determinism and band ordering, the
-annual cash identity in all three modes, and a sweep asserting every scenario
-the sliders can reach produces finite, non-negative balances.
+annual cash identity in all three modes, the rate path (a declared zero step
+matching no step at all, row for row; the re-amortised repayment checked
+against an independent walk of the schedule; the compounded inflation index),
+and a sweep asserting every scenario the sliders can reach produces finite,
+non-negative balances.
 
 ## Also
 
 - Every setting lives in the URL hash, so a copied link reproduces the exact
   scenario. State also persists in `localStorage`.
+- **Borrow to invest** carries a worked example for an equity builder loan —
+  principal and interest over ten years at a rate in the range those products
+  charge. It is the one shape of geared loan here with no margin calls, which
+  is why it belongs in that mode rather than the margin one, and it sets the
+  shape of the loan without touching the amount you typed.
 - Dark and light themes, set before first paint so there is no flash.
 - CSV export carries the inputs, the result, the risk figures and every year.
 - Prints on a light ground with the charts rebuilt for paper.

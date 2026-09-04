@@ -5,7 +5,8 @@ if (m < 0 || n < 0) throw new Error('engine markers not found');
 var code = src.slice(m, n);
 var api = new Function(code + '\nreturn {clamp:clamp,bracketTax:bracketTax,lito:lito,medicareLevy:medicareLevy,' +
   'mlsRate:mlsRate,incomeTax:incomeTax,marginalRate:marginalRate,frankingOn:frankingOn,pmt:pmt,' +
-  'project:project,monteCarlo:monteCarlo,breakeven:breakeven,exitValue:exitValue,TAX:TAX};')();
+  'project:project,monteCarlo:monteCarlo,breakeven:breakeven,exitValue:exitValue,TAX:TAX,' +
+  'rateAt:rateAt,inflAt:inflAt,inflIx:inflIx};')();
 
 var pass = 0, fail = 0;
 function near(a, b, tol){ return Math.abs(a - b) <= (tol == null ? 0.5 : tol); }
@@ -374,6 +375,96 @@ ckTrue('and every call lands the LVR on the maximum',
   called.map(function(r){ return r.lvr; }).join(' '));
 ckTrue('the lender takes exactly what it sold',
   called.every(function(r){ return r.callSold > 0; }));
+
+/* ------------------------------------------------- the rate outlook */
+head('the rate outlook: one step, at one year');
+var SP = { shiftYear: 6, rateShift: 0.02, inflShift: 0.01 };
+ck('the year before the step is the old rate', api.rateAt(SP, 0.06, 4), 0.06, 1e-12);
+ck('the step year itself is the new one',      api.rateAt(SP, 0.06, 5), 0.08, 1e-12);
+ck('and it stays there',                       api.rateAt(SP, 0.06, 39), 0.08, 1e-12);
+ck('a cut cannot take a rate below zero',
+   api.rateAt({ shiftYear:1, rateShift:-0.05 }, 0.02, 0), 0, 1e-12);
+ck('no path at all leaves the rate alone', api.rateAt({}, 0.06, 30), 0.06, 1e-12);
+ck('and leaves inflation alone', api.inflAt({ inflation:0.025 }, 30), 0.025, 1e-12);
+ck('inflation compounds along the path it is actually on',
+   api.inflIx(Object.assign({ inflation:0.025 }, SP), 8),
+   Math.pow(1.025, 5) * Math.pow(1.035, 3), 1e-12);
+ck('and over no years at all it is one', api.inflIx(Object.assign({ inflation:0.025 }, SP), 0), 1, 1e-12);
+
+/* Nothing declared and a declared zero have to be the same projection, or
+   every figure in this file is measuring the wrong thing from here on. */
+function sameRun(name, a, b){
+  ckTrue(name + ': the benefit', Math.abs(a.benefit - b.benefit) < 0.01,
+         a.benefit + ' vs ' + b.benefit);
+  var keys = ['port','inv','home','net','invInt','homeInt','schedPrin','taxInc','ix','exitLev','exitBase'];
+  var bad = null;
+  a.rows.forEach(function(r, i){
+    keys.forEach(function(k){
+      if (!bad && Math.abs(r[k] - b.rows[i][k]) > 0.01) bad = 'year ' + r.y + ' ' + k +
+        ': ' + r[k] + ' vs ' + b.rows[i][k];
+    });
+  });
+  ckTrue(name + ': every row', bad === null, bad);
+}
+sameRun('a zero step is no step', api.project(P()),
+        api.project(P({ shiftYear:6, rateShift:0, inflShift:0 })));
+sameRun('a step after the last year never happens', api.project(P()),
+        api.project(P({ shiftYear:21, rateShift:0.03, inflShift:0.03 })));
+
+var up = api.project(P({ shiftYear:6, rateShift:0.02 }));
+var flat = api.project(P());
+ckTrue('dearer money costs the geared side', up.benefit < flat.benefit,
+       up.benefit + ' vs ' + flat.benefit);
+ckTrue('and cheaper money pays it', api.project(P({ shiftYear:6, rateShift:-0.02 })).benefit > flat.benefit);
+ck('year five still pays the old rate', up.rows[4].homeInt, flat.rows[4].homeInt, 0.01);
+ckTrue('year six pays the new one', up.rows[5].homeInt > flat.rows[5].homeInt * 1.2,
+       up.rows[5].homeInt + ' vs ' + flat.rows[5].homeInt);
+ckTrue('a rate rise raises the return you need to break even',
+       api.breakeven(P({ shiftYear:6, rateShift:0.02 })).rate > api.breakeven(P()).rate);
+ckTrue('and the bigger the rise the higher it goes',
+       api.breakeven(P({ shiftYear:6, rateShift:0.04 })).rate >
+       api.breakeven(P({ shiftYear:6, rateShift:0.02 })).rate);
+ckTrue('recycling the principal still keeps the total debt flat through a rate step',
+  up.rows.filter(function(r){ return r.home > 1 && Math.abs(r.debt - 600000) > 1; }).length === 0);
+
+/* The lender re-amortises on the minimum-only schedule, so the figure is one
+   both ledgers can be held to. Walk that schedule here independently. */
+var IDLE = { surplus:0, lumpSum:0, recyclePrin:false, years:12, divYield:0, franked:0, ret:0 };
+var ra = api.project(P(Object.assign({ shiftYear:6, rateShift:0.02 }, IDLE)));
+var pmt0 = api.pmt(600000, 0.06, 25), bal = 600000;
+for (var q = 0; q < 5; q++) bal -= pmt0 - bal * 0.06;
+var pmt1 = api.pmt(bal, 0.08, 20);
+ck('years one to five pay the original repayment', ra.rows[3].homeInt + ra.rows[3].schedPrin, pmt0, 0.01);
+ck('and the balance walks the same schedule', ra.rows[4].home, bal, 0.01);
+ck('year six is re-amortised over the remaining term', ra.rows[5].homeInt + ra.rows[5].schedPrin, pmt1, 0.01);
+ckTrue('which is a bigger repayment than before', pmt1 > pmt0, pmt1 + ' vs ' + pmt0);
+ckTrue('with no strategy the two sides stay identical through a rate step',
+  Math.abs(ra.exitLev - ra.exitBase) < 0.01, ra.exitLev + ' vs ' + ra.exitBase);
+
+var ei = api.project(P({ mode:'equity', borrow:300000, io:false, loanTerm:15,
+                         shiftYear:4, rateShift:0.02, years:15 }));
+ckTrue('a principal-and-interest loan still clears by the end of its term after a rate step',
+  ei.rows[14].inv < 1, ei.rows[14].inv);
+ckTrue('a margin loan pays the new rate too',
+  api.project(P({ mode:'margin', shiftYear:2, rateShift:0.03, years:5 })).rows[2].invInt >
+  api.project(P({ mode:'margin', years:5 })).rows[2].invInt);
+
+var infl = api.project(P({ shiftYear:6, inflShift:0.03 }));
+ck('the thresholds index at the old rate up to the step', infl.rows[4].ix, flat.rows[4].ix, 1e-9);
+ckTrue('and faster after it', infl.rows[10].ix > flat.rows[10].ix,
+       infl.rows[10].ix + ' vs ' + flat.rows[10].ix);
+ck('the indexed path is the compounded one, not a re-based power',
+   infl.rows[11].ix, Math.pow(1.025, 5) * Math.pow(1.055, 6), 1e-9);
+ckTrue('switching the indexation off ignores the step entirely',
+  api.project(P({ shiftYear:6, inflShift:0.03, indexTax:false })).rows[10].ix === 1);
+ckTrue('spare cash rises on the same path when it is indexed',
+  api.project(P({ shiftYear:2, inflShift:0.05, indexSurplus:true, years:6 })).rows[5].surplus >
+  api.project(P({ indexSurplus:true, years:6 })).rows[5].surplus);
+
+ckTrue('every figure stays finite along a steep path',
+  api.project(P({ shiftYear:1, rateShift:0.05, inflShift:0.05 })).rows.every(function(r){
+    return Object.keys(r).every(function(k){ return isFinite(r[k]) || typeof r[k] === 'boolean'; });
+  }));
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

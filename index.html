@@ -75,6 +75,7 @@ h1{font-size:19px;font-weight:700;letter-spacing:-.35px;line-height:1.2}
   cursor:pointer;transition:background var(--dur),border-color var(--dur),color var(--dur);
   white-space:nowrap;
 }
+.btn.sm{padding:5px 9px;font-size:12px;margin-top:7px}
 .btn:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
 .btn:active{transform:translateY(.5px)}
 .btn svg{width:14px;height:14px;flex:none}
@@ -293,7 +294,7 @@ footer a,.disclaimer a{color:var(--accent)}   /* --accent-2 gold falls under 4.5
     --bg:#fff;--card:#fff;--sunken:#fff;--raised:#fff;--hair:#bbb;--grid:#ddd;
     --ink:#111;--ink-2:#333;--ink-3:#555;--shadow:none;
   }
-  .topbar-actions,.act-row,.viewbar .btn,input[type=range],.ticks,.skip{display:none!important}
+  .topbar-actions,.act-row,.viewbar .btn,.fields .btn,input[type=range],.ticks,.skip{display:none!important}
   .layout{display:block;max-width:none;padding:0}
   .inputs{position:static;max-height:none;overflow:visible;page-break-after:avoid}
   /* paper is wide: set the assumptions two-up instead of stretching each row */
@@ -371,21 +372,30 @@ footer a,.disclaimer a{color:var(--accent)}   /* --accent-2 gold falls under 4.5
         <input type="range" id="salary_r" data-for="salary" min="0" max="500000" step="5000" aria-label="Taxable salary slider">
         <div class="ticks"><span>A$0</span><span>A$500k</span></div>
         <p class="hint" id="mrHint"></p>
-        <div class="row2">
-          <label for="salaryGrowth"><span class="lbl-sm">Pay rises</span>
-            <span class="num"><input id="salaryGrowth" type="text" inputmode="decimal" data-key="salaryGrowth" data-kind="pct"><span class="aff suf">%</span></span>
-          </label>
-          <label for="years"><span class="lbl-sm">Over how long</span>
-            <span class="num"><input id="years" type="text" inputmode="numeric" data-key="years" data-kind="int"><span class="aff suf">yrs</span></span>
-          </label>
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <label for="salaryGrowth">Pay rises, before inflation</label>
+          <span class="num"><input id="salaryGrowth" type="text" inputmode="decimal" data-key="salaryGrowth" data-kind="pct"><span class="aff suf">%</span></span>
+        </div>
+        <input type="range" id="salaryGrowth_r" data-for="salaryGrowth" min="0" max="10" step="0.1" aria-label="Pay rises slider">
+        <div class="ticks"><span>0%</span><span>10%</span></div>
+        <p class="hint" id="growthHint"></p>
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <label for="years">Over how long</label>
+          <span class="num"><input id="years" type="text" inputmode="numeric" data-key="years" data-kind="int"><span class="aff suf">yrs</span></span>
         </div>
         <input type="range" id="years_r" data-for="years" min="1" max="40" step="1" aria-label="Years slider">
         <div class="ticks"><span>1 yr</span><span>40 yrs</span></div>
       </div>
 
       <div class="field">
-        <label class="check"><input type="checkbox" id="family" data-key="family"><span>Couple or family thresholds &mdash; raises the Medicare levy and surcharge lines, nothing else</span></label>
         <label class="check"><input type="checkbox" id="cover" data-key="cover"><span>I have private hospital cover</span></label>
+        <label class="check" id="familyRow"><input type="checkbox" id="family" data-key="family"><span>Couple or family thresholds &mdash; raises the Medicare levy and surcharge lines, nothing else</span></label>
         <p class="hint" id="mlsHint"></p>
       </div>
       </div>
@@ -439,7 +449,9 @@ footer a,.disclaimer a{color:var(--accent)}   /* --accent-2 gold falls under 4.5
         </div>
         <input type="range" id="borrow_r" data-for="borrow" min="0" max="1500000" step="10000" aria-label="Amount borrowed slider">
         <div class="ticks"><span>A$0</span><span>A$1.5M</span></div>
-        <p class="hint">Drawn against your home or another property and invested as a lump sum on day one.</p>
+        <p class="hint">Invested as a lump sum on day one. Two shapes fit here: drawn against your home or another property, or an investment loan secured by the portfolio itself &mdash; the second is the one product in this tool with no margin calls, so it belongs in this mode rather than the margin one.</p>
+        <button type="button" class="btn sm" id="exEB">Load the equity builder example</button>
+        <p class="hint" id="ebHint">Principal and interest over ten years at an indicative 7.75% &mdash; the shape of a NAB Equity Builder loan, repaid down every month and never called in a fall. What this mode cannot show is the own contribution those loans sit alongside: here the loan buys the whole portfolio, so read the result as the borrowed portion on its own.</p>
       </div>
       <div class="field">
         <div class="field-head">
@@ -528,8 +540,8 @@ footer a,.disclaimer a{color:var(--accent)}   /* --accent-2 gold falls under 4.5
           <label for="ret">Total return before fees</label>
           <span class="num"><input id="ret" type="text" inputmode="decimal" data-key="ret" data-kind="pct"><span class="aff suf">%</span></span>
         </div>
-        <input type="range" id="ret_r" data-for="ret" min="0" max="15" step="0.1" aria-label="Total return slider">
-        <div class="ticks"><span>0%</span><span>15%</span></div>
+        <input type="range" id="ret_r" data-for="ret" min="0" max="25" step="0.1" aria-label="Total return slider">
+        <div class="ticks"><span>0%</span><span>25%</span></div>
         <p class="hint" id="retHint"></p>
       </div>
       <div class="field">
@@ -574,6 +586,26 @@ footer a,.disclaimer a{color:var(--accent)}   /* --accent-2 gold falls under 4.5
         <label class="check"><input type="checkbox" id="indexTax" data-key="indexTax"><span>Index the tax thresholds with inflation</span></label>
         <label class="check"><input type="checkbox" id="patterns" data-key="patterns"><span>Use patterns as well as colour in charts</span></label>
         <p class="hint" id="taxHint"></p>
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <label for="rateShift">Borrowing rates move</label>
+          <span class="num"><input id="rateShift" type="text" inputmode="decimal" data-key="rateShift" data-kind="pct"><span class="aff suf">pts</span></span>
+        </div>
+        <input type="range" id="rateShift_r" data-for="rateShift" min="-5" max="5" step="0.25" aria-label="Borrowing rate change slider">
+        <div class="ticks"><span>&minus;5 pts</span><span>+5 pts</span></div>
+        <div class="row2">
+          <label for="inflShift"><span class="lbl-sm">Inflation moves</span>
+            <span class="num"><input id="inflShift" type="text" inputmode="decimal" data-key="inflShift" data-kind="pct"><span class="aff suf">pts</span></span>
+          </label>
+          <label for="shiftYear"><span class="lbl-sm">From year</span>
+            <span class="num"><input id="shiftYear" type="text" inputmode="numeric" data-key="shiftYear" data-kind="int"><span class="aff suf">yr</span></span>
+          </label>
+        </div>
+        <input type="range" id="shiftYear_r" data-for="shiftYear" min="1" max="40" step="1" aria-label="Rate change year slider">
+        <div class="ticks"><span>yr 1</span><span>yr 40</span></div>
+        <p class="hint" id="outlookHint"></p>
       </div>
       </div>
     </fieldset>
@@ -728,9 +760,11 @@ footer a,.disclaimer a{color:var(--accent)}   /* --accent-2 gold falls under 4.5
       <li><b>A net investment loss is added back for the Medicare levy surcharge.</b> Negative gearing cuts your income tax without moving you down a surcharge tier — the one place the deduction buys you nothing.</li>
       <li><b>Debt recycling keeps the total debt the same size and changes what it is doing.</b> Cash pays down the home loan and is drawn again through a separate split to invest, so the deductible share climbs while the balance does not fall. Recycle the scheduled principal as well and the total debt never falls at all.</li>
       <li><b>A margin call is settled back to the lender's maximum, not to the buffer.</b> Selling moves both the loan and the portfolio, so it takes more than the gap to close it. The proceeds go to the lender and the sale realises a capital gain.</li>
+      <li><b>Not every geared investment loan can be called.</b> An equity builder loan is secured by the portfolio, geared to at most 75% of it, and repaid principal and interest over about ten years &mdash; and a fall in the portfolio triggers nothing at all. That is why the worked example loads into <i>borrow to invest</i> rather than into margin mode. What you pay for it is the repayment: principal has to come out of cash flow every year, whatever the market is doing. The gearing limit itself is not modelled, because this mode has no own-contribution field &mdash; the loan buys the whole portfolio, so the example is the borrowed portion on its own.</li>
       <li><b>A year that cannot pay its own interest sells units to cover it</b>, which realises a gain and shrinks the position — the quiet way a geared holding erodes in a flat market. Last year's capital gains tax is paid out of this year's cash, as it is in life.</li>
       <li><b>The range of outcomes</b> draws a fresh return for each year of each of 1,000 runs from a normal distribution around your expected return, and re-runs both sides against it. The seed is fixed, so the same inputs always give the same fan.</li>
-      <li><b>Tax is worked out on one person's income.</b> The couple-or-family switch raises the Medicare levy and surcharge thresholds and does nothing else — there is no income splitting, no partner's income, and dependent children (which raise both thresholds again) are not modelled.</li>
+      <li><b>Tax is worked out on one person's income.</b> The couple-or-family switch raises the Medicare levy and surcharge thresholds and does nothing else, so it is hidden while hospital cover has the surcharge switched off and no year&rsquo;s taxable income reaches the levy shade-in &mdash; at that point it cannot change a figure on the page. There is no income splitting, no partner's income, and dependent children (which raise both thresholds again) are not modelled.</li>
+      <li><b>Rates and inflation can step once.</b> From the year you pick, every borrowing rate moves by the amount you set and holds there, and inflation can move with it. A step rather than a smooth drift because the question it answers is a shock: what a rate rise does to a position that was sized at the old rate. When a home loan's rate moves the lender re-amortises it, and the new repayment is worked out on the schedule the loan would be on had only the minimum ever been paid &mdash; so both sides are held to the same commitment and the comparison cannot tilt towards whichever of them had paid the loan down faster.</li>
       <li><b>Tax parameters are FY 2026-27</b> and live in <code>data/au-tax.json</code> in the repository, inlined into this page so it still makes no network requests. Thresholds are indexed with inflation unless you switch that off.</li>
     </ul>
   </section>
@@ -849,6 +883,27 @@ function frankingOn(divs, frankedShare){
 function cgDiscount(){ return TAX.capitalGains.individualDiscount; }
 
 /* Level annual repayment on a loan of B at rate r over n years. */
+/* One regime change, shared timing: from the chosen year the borrowing rates
+   and inflation each step by their own amount and stay there. A step rather
+   than a smooth drift because the question it answers is a shock — what a rate
+   rise does to a geared position that was sized at the old rate. t is 0-based,
+   so t + 1 is the year the borrower is living through. */
+function shifted(p, t){ return p.shiftYear != null && t + 1 >= p.shiftYear; }
+function rateAt(p, base, t){
+  return Math.max(0, base + (shifted(p, t) ? (p.rateShift || 0) : 0));
+}
+function inflAt(p, t){
+  return Math.max(0, p.inflation + (shifted(p, t) ? (p.inflShift || 0) : 0));
+}
+/* Inflation compounded over the first n years of that path. Everything that
+   used to raise (1 + inflation) to a power reads this instead, so the tax
+   indexation, the indexed spare cash and the today's-money deflator can never
+   disagree about how much prices moved. */
+function inflIx(p, n){
+  var f = 1;
+  for (var t = 0; t < n; t++) f *= 1 + inflAt(p, t);
+  return f;
+}
 function pmt(B, r, n){
   if (n <= 0 || B <= 0) return 0;
   if (r <= 1e-9) return B / n;
@@ -898,6 +953,10 @@ function project(p, opt){
   var port = 0, cost = 0, inv = 0, home = 0;   /* geared */
   var bPort = 0, bCost = 0, bHome = 0;         /* plain */
   var homePmt = 0, invPmt = 0;
+  /* The balance the home loan would carry had only the minimum ever been paid.
+     It exists so a rate change can be re-amortised on the same figure for both
+     ledgers, and it is untouched by extra repayments or by recycling. */
+  var schedBal = p.homeBal, lastHRate = null, lastIRate = null;
   var lossCf = 0, capLossCf = 0, bLossCf = 0, cgtDue = 0;
 
   if (mode === 'recycle'){
@@ -928,11 +987,22 @@ function project(p, opt){
 
   for (var t = 0; t < years; t++){
     var callSold = 0;                    /* units the lender took, not units you spent */
-    var ix = p.indexTax ? Math.pow(1 + p.inflation, t) : 1;
+    var ix = p.indexTax ? inflIx(p, t) : 1;
+    var hRate = rateAt(p, p.homeRate, t);
+    var iRate = rateAt(p, p.invRate, t);
+    /* The lender re-amortises when the rate moves: same borrower, same
+       remaining term, a new minimum. One figure serves both ledgers and it is
+       taken from the schedule the loan would be on had only the minimum ever
+       been paid — hand the side that got ahead a smaller commitment and the
+       comparison tilts towards whichever side paid the loan down faster. */
+    if (mode === 'recycle' && hRate !== lastHRate){
+      homePmt = pmt(schedBal, hRate, Math.max(1, p.homeTerm - t));
+      lastHRate = hRate;
+    }
     var sal = p.salary * Math.pow(1 + p.salaryGrowth, t);
     var g = Math.max(-0.85, p.ret + (seq ? seq[t] : 0));   /* total return this year */
     var grow = g - p.divYield - p.fee;                     /* the capital part of it */
-    var surplus = p.surplus * (p.indexSurplus ? Math.pow(1 + p.inflation, t) : 1);
+    var surplus = p.surplus * (p.indexSurplus ? inflIx(p, t) : 1);
     var TO = { ix: ix, family: p.family, cover: p.cover };
 
     var portOpen = port, invOpen = inv, homeOpen = home;
@@ -940,15 +1010,19 @@ function project(p, opt){
     var taxSalary = incomeTax(sal, TO);
 
     /* ---- the loans' own contractual year ------------------------ */
-    var homeInt = homeOpen * p.homeRate;
+    var homeInt = homeOpen * hRate;
     var schedPrin = mode === 'recycle' ? clamp(homePmt - homeInt, 0, homeOpen) : 0;
-    var invPrin = (mode === 'equity' && !p.io) ? clamp(invPmt - invOpen * p.invRate, 0, invOpen) : 0;
+    if (mode === 'equity' && !p.io && iRate !== lastIRate){
+      invPmt = pmt(invOpen, iRate, Math.max(1, p.loanTerm - t));
+      lastIRate = iRate;
+    }
+    var invPrin = (mode === 'equity' && !p.io) ? clamp(invPmt - invOpen * iRate, 0, invOpen) : 0;
     /* Recycled principal leaves the home loan and is drawn again into the
        deductible split, so the debt is the same size and a larger share of it
        is working. The total never falls — the part of this strategy that
        deserves to be said out loud. */
     var redrawPrin = (mode === 'recycle' && p.recyclePrin) ? schedPrin : 0;
-    var rate = mode === 'margin' ? p.marginRate : p.invRate;
+    var rate = mode === 'margin' ? rateAt(p, p.marginRate, t) : iRate;
     /* The repayment is committed cash until the loan it services is gone, and
        then it is not. Whichever side clears its home loan first gets that
        money back to invest, which is most of the case for paying the mortgage
@@ -1042,6 +1116,8 @@ function project(p, opt){
     if (inv > port + 0.005) everUnder = true;
     sold += soldY;
 
+    schedBal = Math.max(0, schedBal - Math.max(0, homePmt - schedBal * hRate));
+
     /* Capital losses only ever offset capital gains, and they are applied
        before the discount. Whatever is left is taxed on top of the year's
        income and the bill arrives with next year's return. */
@@ -1060,7 +1136,7 @@ function project(p, opt){
     /* ================= the plain alternative ==================== */
     var bDivs = 0, bFrk = 0, bTi = 0, bTax = 0, bExtra = 0, bBuy = 0;
     var bBase = bPortOpen, bCarry = 0;
-    var bHomeInt = bHomeOpen * p.homeRate;
+    var bHomeInt = bHomeOpen * hRate;
     var bSched = mode === 'recycle' ? clamp(homePmt - bHomeInt, 0, bHomeOpen) : 0;
     var bFreed = mode === 'recycle' ? Math.max(0, homePmt - bHomeInt - bSched) : 0;
     for (var bt = 0; bt < 30; bt++){
@@ -1097,6 +1173,9 @@ function project(p, opt){
         divs: divs, frk: frk, invInt: invInt, homeInt: homeInt,
         schedPrin: schedPrin, invPrin: invPrin, recycled: draw2, buy: buy, freed: freed,
         taxInc: taxInc, taxSalary: taxSalary, saved: taxSalary - taxInc,
+        /* the taxable income each side was assessed on, which is what decides
+           whether a threshold switch can reach the answer at all */
+        ti: ti, bTi: bTi,
         cgt: cgt, cgtPaid: cgtPaid, sold: soldY, callSold: callSold, need: need, unfunded: unfunded,
         surplus: surplus,
         lvr: lvr, call: called,
@@ -1114,7 +1193,7 @@ function project(p, opt){
 
   var last = rows.length ? rows[rows.length - 1] : null;
   var salEnd = p.salary * Math.pow(1 + p.salaryGrowth, years - 1);
-  var ixEnd  = p.indexTax ? Math.pow(1 + p.inflation, years - 1) : 1;
+  var ixEnd  = p.indexTax ? inflIx(p, years - 1) : 1;
   var exL = last ? last.exitLev  : exitValue(port,  cost,  inv + home, salEnd, ixEnd, p, disc);
   var exB = last ? last.exitBase : exitValue(bPort, bCost, bHome,      salEnd, ixEnd, p, disc);
   return {
@@ -1257,18 +1336,18 @@ var DEFAULTS = {
   ownCap:200000, lvrTarget:50, marginRate:8.5, maxLvr:70, buffer:5, topUp:false,
   surplus:30000, indexSurplus:false, directTax:true,
   ret:8, divYield:3, franked:70, fee:0.2, vol:15,
-  inflation:2.5, indexTax:true,
+  inflation:2.5, indexTax:true, rateShift:0, inflShift:0, shiftYear:5,
   basis:'nominal', patterns:false
 };
 var LIMITS = {
-  years:[1,40], salary:[0,5000000], salaryGrowth:[0,15],
+  years:[1,40], salary:[0,5000000], salaryGrowth:[0,10],
   homeBal:[0,20000000], homeRate:[0,25], homeTerm:[1,40], lumpSum:[0,20000000],
   borrow:[0,20000000], invRate:[0,25], loanTerm:[1,40],
   ownCap:[0,20000000], lvrTarget:[0,90], marginRate:[0,30], maxLvr:[1,95], buffer:[0,40],
-  surplus:[0,2000000], ret:[0,30], divYield:[0,20], franked:[0,100], fee:[0,5], vol:[0,60],
-  inflation:[0,15]
+  surplus:[0,2000000], ret:[0,25], divYield:[0,20], franked:[0,100], fee:[0,5], vol:[0,60],
+  inflation:[0,15], rateShift:[-5,5], inflShift:[-5,5], shiftYear:[1,40]
 };
-var INT_KEYS  = { years:1, homeTerm:1, loanTerm:1 };
+var INT_KEYS  = { years:1, homeTerm:1, loanTerm:1, shiftYear:1 };
 var BOOL_KEYS = { family:1, cover:1, recyclePrin:1, io:1, topUp:1,
                   indexSurplus:1, directTax:1, indexTax:1, patterns:1 };
 /* short keys keep a shared link inside a message-app preview */
@@ -1279,7 +1358,8 @@ var SHORT = {
   ownCap:'oc', lvrTarget:'lv', marginRate:'mr', maxLvr:'mx', buffer:'bf', topUp:'tu',
   surplus:'sp', indexSurplus:'xs', directTax:'dt',
   ret:'r', divYield:'dy', franked:'fk', fee:'fe', vol:'v',
-  inflation:'n', indexTax:'xt', basis:'b', patterns:'g'
+  inflation:'n', indexTax:'xt', rateShift:'rs', inflShift:'ns', shiftYear:'sy',
+  basis:'b', patterns:'g'
 };
 var MODES = ['recycle','equity','margin'];
 var state = Object.assign({}, DEFAULTS);
@@ -1292,6 +1372,7 @@ function params(s){
     ret: s.ret / 100, divYield: s.divYield / 100, franked: s.franked / 100,
     fee: s.fee / 100, vol: s.vol / 100,
     inflation: s.inflation / 100, indexTax: !!s.indexTax, indexSurplus: !!s.indexSurplus,
+    rateShift: s.rateShift / 100, inflShift: s.inflShift / 100, shiftYear: s.shiftYear,
     surplus: s.surplus, directTax: !!s.directTax,
     homeBal: s.homeBal, homeRate: s.homeRate / 100, homeTerm: s.homeTerm,
     recyclePrin: !!s.recyclePrin, lumpSum: s.lumpSum,
@@ -1414,7 +1495,7 @@ function esc(s){
    a change to the projection, so every figure divides by the same factor for
    the year it belongs to. */
 function defl(y){
-  return state.basis === 'real' ? Math.pow(1 + state.inflation / 100, y) : 1;
+  return state.basis === 'real' ? inflIx(deflP || params(state), y) : 1;
 }
 function dv(v, y){ return v / defl(y); }
 function modeWord(){
@@ -1599,6 +1680,16 @@ function renderNet(sim, mc){
   }
 
   /* the plain alternative first, so the geared line sits over it */
+  var stepY = (sim.p.rateShift || sim.p.inflShift) && sim.p.shiftYear <= years
+    ? sim.p.shiftYear : 0;
+  if (stepY){
+    var sx = r1(X(stepY)), late = stepY > years * 0.62;
+    s.push('<line x1="' + sx + '" y1="' + T + '" x2="' + sx + '" y2="' + r1(T + plotH) +
+           '" stroke="' + c['--ink-3'] + '" stroke-width="1" stroke-dasharray="3 4"></line>');
+    s.push('<text x="' + r1(sx + (late ? -5 : 5)) + '" y="' + (T + 11) + '" fill="' + c['--ink-3'] +
+           '" font-size="10.5" text-anchor="' + (late ? 'end' : 'start') + '">rates step</text>');
+  }
+
   s.push('<path d="' + line(BASE) + '" fill="none" stroke="' + c['--ink-3'] +
          '" stroke-width="2" stroke-dasharray="6 4" stroke-linecap="round"></path>');
   s.push('<path d="' + line(LEV) + '" fill="none" stroke="' + c['--card'] +
@@ -1650,7 +1741,8 @@ function renderNet(sim, mc){
     money(BASE[BASE.length-1]) + '. A difference of ' + money(LEV[LEV.length-1] - BASE[BASE.length-1]) + '.' +
     (band ? ' A shaded fan behind them covers the middle 80% of a thousand simulated markets.' : '') +
     (sim.calls.length ? ' ' + sim.calls.length + ' margin call' + (sim.calls.length > 1 ? 's are' : ' is') +
-      ' marked in red.' : '');
+      ' marked in red.' : '') +
+    (stepY ? ' A dashed rule marks year ' + stepY + ', where the rate outlook steps.' : '');
   $('#netSub').textContent = 'Net wealth after selling up, paying the capital gains tax and clearing the debt' +
     (state.basis === 'real' ? ", in today's money" : '') + '. Both sides spend the same ' +
     money(state.surplus) + ' a year and see the same market.';
@@ -2639,11 +2731,19 @@ function buildCSV(sim, mc, be){
     'figures. Verify before acting and seek advice from a licensed financial adviser and a registered tax agent.']);
   L.push([]);
   L.push(['--- inputs ---']);
-  L.push(['Taxable salary', state.salary, 'growing at ' + state.salaryGrowth + '% a year']);
+  L.push(['Taxable salary', state.salary,
+          'pay rises ' + state.salaryGrowth + '% a year before inflation, not on top of it']);
   L.push(['Couple or family thresholds', state.family ? 'yes' : 'no']);
   L.push(['Private hospital cover', state.cover ? 'yes' : 'no (Medicare levy surcharge applies)']);
   L.push(['Years', state.years]);
   L.push(['Spare cash each year', state.surplus, state.indexSurplus ? 'rising with inflation' : 'flat']);
+  L.push(['Rate outlook', (state.rateShift || state.inflShift)
+    ? 'from year ' + state.shiftYear
+    : 'flat',
+    (state.rateShift || state.inflShift)
+      ? 'borrowing rates ' + (state.rateShift >= 0 ? '+' : '') + state.rateShift +
+        ' pts, inflation ' + (state.inflShift >= 0 ? '+' : '') + state.inflShift + ' pts'
+      : 'rates and inflation held constant']);
   L.push(['Tax saving reinvested', state.directTax ? 'yes' : 'no']);
   if (state.mode === 'recycle'){
     L.push(['Home loan balance', state.homeBal]);
@@ -2728,7 +2828,7 @@ function downloadCSV(){
    The sidebar explains itself from the numbers, not from generic prose: every
    hint below is derived from the current scenario.
    ================================================================ */
-function syncHints(sim){
+function syncHints(sim, be){
   var p = params(state);
   var ix = 1;
   var mr = marginalRate(state.salary, { ix: ix, family: state.family, cover: state.cover });
@@ -2736,18 +2836,72 @@ function syncHints(sim){
     ', so every dollar of deductible interest is worth ' + Math.round(mr * 100) + 'c back. FY ' +
     TAX.financialYear + ' rates.';
 
+  /* A pay rise here is a cash figure; the inflation field does not enter it.
+     Worth saying out loud, because 2% rises against 2.5% inflation is a small
+     pay cut every year and no figure on the page would otherwise show it. */
+  var realG = (1 + state.salaryGrowth / 100) / (1 + state.inflation / 100) - 1;
+  var salEnd = state.salary * Math.pow(1 + state.salaryGrowth / 100, state.years - 1);
+  $('#growthHint').textContent = 'The rise on your pay letter, not a rise on top of inflation: ' +
+    pc(state.salaryGrowth, 1) + ' a year against ' + pc(state.inflation, 1) + ' inflation leaves you ' +
+    (Math.abs(realG) < 5e-5 ? 'level with the cost of living'
+      : pcOf(Math.abs(realG), 1) + ' a year ' + (realG > 0 ? 'ahead of' : 'behind') + ' the cost of living') +
+    '. Year ' + state.years + ' pay is ' + money(salEnd) + ', which is ' +
+    money(salEnd / Math.pow(1 + state.inflation / 100, state.years - 1)) + ' in today\u2019s money.';
+
   var mlsR = state.cover ? 0 : mlsRate(state.salary, state.family, ix);
-  $('#mlsHint').textContent = state.cover
+  var mlsTxt = state.cover
     ? 'With cover there is no surcharge. Without it, a net investment loss is added back — so negative gearing would not get you under a tier.'
     : mlsR > 0
       ? 'The surcharge applies at ' + pcOf(mlsR, 2) + ' of taxable income, and a net investment loss is added back, so the deduction will not get you under the tier.'
       : 'Below the surcharge thresholds at this income. Investment income can lift you over one.';
+  if (!familyMatters(sim))
+    mlsTxt += ' The couple-or-family switch is hidden while cover has the surcharge switched off, because the only other thing it does \u2014 lift the Medicare levy shade-in below ' +
+      money(TAX.medicareLevy.lowerThreshold.family * ix) + ' \u2014 cannot reach any year of this scenario.';
+  $('#mlsHint').textContent = mlsTxt;
+
+  /* ---- the rate outlook ---- */
+  var sh = state.rateShift, nsh = state.inflShift, y0 = state.shiftYear;
+  var baseRate = state.mode === 'recycle' ? state.homeRate
+               : state.mode === 'equity'  ? state.invRate : state.marginRate;
+  var rateName = state.mode === 'recycle' ? 'The home loan'
+               : state.mode === 'equity'  ? 'The investment loan' : 'The margin loan';
+  if (!sh && !nsh){
+    $('#outlookHint').textContent = 'Rates and inflation hold flat for the whole projection. ' +
+      'Move either and the step lands in year ' + y0 + ' and stays there for good.';
+  } else if (y0 > state.years){
+    $('#outlookHint').textContent = 'The step is set for year ' + y0 + ', after this ' +
+      state.years + '-year projection ends, so nothing in it changes. Bring the year back to ' +
+      state.years + ' or less to see it.';
+  } else {
+    var parts = [];
+    if (sh) parts.push(rateName + ' goes ' + pc(baseRate, 2) + ' \u2192 ' + pc(baseRate + sh, 2));
+    if (nsh) parts.push((sh ? 'inflation goes ' : 'Inflation goes ') +
+                        pc(state.inflation, 1) + ' \u2192 ' + pc(state.inflation + nsh, 1));
+    var txt = parts.join(' and ') + ' in year ' + y0 + ', and holds for the ' +
+      (state.years - y0 + 1) + ' years from then on.' +
+      /* Recycling borrows on two rates, and only one of them has a field. */
+      (sh && state.mode === 'recycle' ? ' The deductible split moves with it.' : '');
+    /* The second break-even run is only worth its cost when there is a step to
+       measure, so it is computed here rather than in render. */
+    var flat = breakeven(params(Object.assign({}, state, { rateShift: 0, inflShift: 0 })));
+    if (be && !be.above && !be.below && !flat.above && !flat.below){
+      var d = be.rate - flat.rate;
+      txt += Math.abs(d) < 5e-5
+        ? ' The return you need to break even does not move from ' + pcOf(flat.rate, 1) + '.'
+        : ' The return you need to break even ' + (d > 0 ? 'rises ' : 'falls ') +
+          pcOf(flat.rate, 1) + ' \u2192 ' + pcOf(be.rate, 1) + '.';
+    }
+    $('#outlookHint').textContent = txt;
+  }
 
   if (state.mode === 'recycle'){
     var P = pmt(state.homeBal, state.homeRate / 100, state.homeTerm);
     $('#pmtHint').textContent = state.homeBal > 0
       ? 'A level repayment of ' + money(P) + ' a year (' + money(P / 12) + ' a month), of which ' +
-        money(state.homeBal * state.homeRate / 100) + ' is interest in year one.'
+        money(state.homeBal * state.homeRate / 100) + ' is interest in year one.' +
+        (sh && y0 <= state.years
+          ? ' The lender re-amortises it in year ' + y0 + ' when the rate steps, so it does not stay level.'
+          : '')
       : 'Nothing owing, so there is nothing to recycle — this strategy needs a non-deductible loan to convert.';
     var first = sim.rows[0];
     $('#prinHint').textContent = state.recyclePrin
@@ -2802,6 +2956,10 @@ function syncHints(sim){
    14. WIRING
    ================================================================ */
 var currentSim = null, currentMc = null, currentBe = null;
+/* The params the deflator should use, refreshed at the top of every render so
+   today's-money and the projection can never be discounting on different
+   inflation paths. */
+var deflP = null;
 var rafId = 0, persistTimer = 0;
 var MC_PATHS = 1000;
 var mcCache = { key:null, res:null };
@@ -2817,6 +2975,7 @@ function mcFor(p){
 function render(){
   hideTipsExcept(null);   /* the numbers behind an open readout have just moved */
   var p = params(state);
+  deflP = p;
   currentSim = project(p);
   currentMc  = mcFor(p);
   currentBe  = breakeven(p);
@@ -2827,7 +2986,8 @@ function render(){
   renderDebt(currentSim);
   renderSens(currentSim, currentBe);
   renderTable(currentSim);
-  syncHints(currentSim);
+  syncHints(currentSim, currentBe);
+  syncDisable();          /* the family gate reads the run it just finished */
 }
 function scheduleRender(){
   if (rafId) return;
@@ -2852,7 +3012,8 @@ function syncOne(key){
 }
 var NUM_KEYS = ['salary','salaryGrowth','years','homeBal','homeRate','homeTerm','lumpSum',
                 'borrow','invRate','loanTerm','ownCap','lvrTarget','marginRate','maxLvr','buffer',
-                'surplus','ret','divYield','franked','fee','vol','inflation'];
+                'surplus','ret','divYield','franked','fee','vol','inflation',
+                'rateShift','inflShift','shiftYear'];
 function syncInputs(){
   NUM_KEYS.forEach(syncOne);
   Object.keys(BOOL_KEYS).forEach(function(id){
@@ -2867,6 +3028,22 @@ function syncInputs(){
   /* the repayment term only means something on a P&I loan */
   $('#termRow').hidden = !!state.io;
   syncDisable();
+}
+/* The couple-or-family switch does two separate things: it lifts the Medicare
+   levy shade-in and it lifts the surcharge tiers. Hospital cover switches the
+   surcharge off, so with cover ticked the switch can only still reach the
+   answer through the levy — and only while a taxable income is low enough to
+   sit in the shade-in band, since above it the flat 2% binds either way. That
+   makes the test exact rather than a guess about income: ask the levy itself,
+   on the figures each side was actually assessed on. */
+function familyMatters(sim){
+  if (!state.cover) return true;            /* the surcharge tiers are in play */
+  if (!sim) return true;                    /* asked before the first run */
+  return sim.rows.some(function(r){
+    return [r.ti, r.bTi, r.sal].some(function(ti){
+      return medicareLevy(ti, true, r.ix) !== medicareLevy(ti, false, r.ix);
+    });
+  });
 }
 /* Nothing to recycle with no home loan, and nothing to gear with no capital:
    both halves of that state — the disabled attribute and the dimming — live
@@ -2884,6 +3061,11 @@ function syncDisable(){
     var el = document.getElementById(id);
     if (el) el.disabled = offTop;
   });
+  /* Left checked, not cleared: the condition for hiding it is precisely that
+     the setting changes no figure, so there is nothing to undo and nothing
+     acting out of sight — un-tick the cover above and it comes back exactly
+     as it was. */
+  $('#familyRow').hidden = !familyMatters(currentSim);
 }
 
 /* Rewrite a money field in place while it is being typed in, keeping the
@@ -2910,7 +3092,15 @@ function onNumInput(el){
      with a comma and it must never be read as a decimal point. Percent and
      year fields keep the point. */
   var isMoney = el.getAttribute('data-kind') === 'money';
-  var raw = isMoney ? el.value.replace(/[^0-9]/g, '') : el.value.replace(/[^0-9.]/g, '');
+  /* A field whose lower limit is below zero has to keep a leading minus, and
+     only a leading one: "-2-3" is a typo, not a number. */
+  var signed = (LIMITS[key] || [0, 0])[0] < 0;
+  var raw = isMoney ? el.value.replace(/[^0-9]/g, '')
+                    : el.value.replace(signed ? /[^0-9.\-]/g : /[^0-9.]/g, '');
+  if (signed){
+    var neg = raw.charAt(0) === '-';
+    raw = (neg ? '-' : '') + raw.slice(neg ? 1 : 0).split('-')[0];
+  }
   var n = parseFloat(raw);
   if (!isFinite(n)) n = 0;
   state[key] = fit(key, n);
@@ -3104,6 +3294,14 @@ function init(){
       state.basis = this.value;
       afterChange();
     });
+  });
+  /* An example, not a quote: it sets the shape of the loan — principal and
+     interest, ten years, a rate in the range these products charge — and
+     leaves the amount you typed alone, because the amount is the part that
+     is yours to choose. */
+  $('#exEB').addEventListener('click', function(){
+    state.mode = 'equity'; state.io = false; state.loanTerm = 10; state.invRate = 7.75;
+    reconcile(); syncInputs(); afterChange();
   });
   $('#themeBtn').addEventListener('click', function(){
     setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
