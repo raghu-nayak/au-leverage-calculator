@@ -268,6 +268,10 @@ tr.tot td,tr.tot td:first-child{font-weight:700;border-top:1px solid var(--hair)
 
 footer{max-width:1400px;margin:0 auto;padding:4px 20px 44px;color:var(--ink-3);font-size:11.5px;line-height:1.6}
 footer a,.disclaimer a{color:var(--accent)}   /* --accent-2 gold falls under 4.5:1 on white */
+/* The version and copyright line. It sits under a rule at the very bottom, quiet
+   enough not to compete with the disclaimer above it but still there on paper. */
+.colophon{margin:16px 0 0;padding-top:12px;border-top:1px solid var(--hair);text-align:center}
+.colophon span{white-space:nowrap}
 .method{margin-top:14px;padding:15px 17px;background:var(--card);border:1px solid var(--hair);border-radius:var(--r)}
 .method h2{font-size:11px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:var(--ink-3);margin-bottom:9px}
 .method ul{margin:0;padding-left:18px}
@@ -804,6 +808,14 @@ footer a,.disclaimer a{color:var(--accent)}   /* --accent-2 gold falls under 4.5
     <p>Before making any financial decision, seek advice from a licensed financial adviser, a registered
     tax agent, or another qualified professional who can consider your individual circumstances.</p>
   </section>
+
+  <!-- Hand-maintained: there is no build step to stamp it, so bump it in the same
+       commit as the change it describes. -->
+  <p class="colophon">
+    <span>v1.0.0</span> &middot;
+    <span>&copy; 2026 Raghu Nayak</span> &middot;
+    <span><a href="https://github.com/raghu-nayak/au-leverage-calculator" rel="noopener">source on GitHub</a></span>
+  </p>
 </footer>
 
 <script>
