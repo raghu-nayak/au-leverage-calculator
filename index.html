@@ -809,10 +809,11 @@ footer a,.disclaimer a{color:var(--accent)}   /* --accent-2 gold falls under 4.5
     tax agent, or another qualified professional who can consider your individual circumstances.</p>
   </section>
 
-  <!-- Hand-maintained: there is no build step to stamp it, so bump it in the same
-       commit as the change it describes. -->
+  <!-- The version is filled in from APP_VERSION at start-up; the literal here is
+       what prints and what shows if the script never ran, and a test keeps the
+       two from drifting apart. -->
   <p class="colophon">
-    <span>v1.0.0</span> &middot;
+    <span id="ver">v1.0.1</span> &middot;
     <span>&copy; 2026 Raghu Nayak</span> &middot;
     <span><a href="https://github.com/raghu-nayak/au-leverage-calculator" rel="noopener">source on GitHub</a></span>
   </p>
@@ -1345,6 +1346,16 @@ function breakeven(p){
 /* ================================================================
    3. STATE
    ================================================================ */
+/* One place says what this is and which build it is. The footer, the CSV header
+   and anything else that has to name the build all read it from here, and a test
+   holds the literal in the footer to the same figure. Hand-maintained: there is
+   no build step to stamp it, so it is bumped in the same commit as the change it
+   describes -- patch for wording, styling or a corrected figure, minor for a new
+   input, mode or chart, major for a change that makes an existing shared link
+   read differently. */
+var APP_NAME = 'Debt recycling and leverage calculator';
+var APP_VERSION = '1.0.1';
+
 var DEFAULTS = {
   mode:'recycle', years:20, salary:180000, salaryGrowth:2, family:false, cover:true,
   homeBal:600000, homeRate:6, homeTerm:25, recyclePrin:true, lumpSum:0,
@@ -2732,7 +2743,7 @@ function csvCell(v){
 function buildCSV(sim, mc, be){
   var real = state.basis === 'real';
   var L = [];
-  L.push(['Debt recycling and leverage calculator']);
+  L.push([APP_NAME + ' ' + APP_VERSION]);
   L.push(['Generated', new Date().toISOString().slice(0, 10)]);
   L.push(['Strategy', { recycle:'Debt recycling', equity:'Borrow to invest', margin:'Margin loan' }[state.mode]]);
   L.push(['Tax year', TAX.financialYear, 'Australian resident']);
@@ -3304,6 +3315,10 @@ function init(){
   try { storedTheme = localStorage.getItem('alc.theme'); } catch(e){}
   var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
   setTheme(storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : (prefersLight ? 'light' : 'dark'));
+
+  /* the footer carries a literal of this so it still prints on a page whose
+     script never ran; this is what makes the two agree at runtime */
+  $('#ver').textContent = 'v' + APP_VERSION;
 
   if (!parseHash()) loadStored();
   reconcile();

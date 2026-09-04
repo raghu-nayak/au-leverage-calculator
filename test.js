@@ -466,5 +466,21 @@ ckTrue('every figure stays finite along a steep path',
     return Object.keys(r).every(function(k){ return isFinite(r[k]) || typeof r[k] === 'boolean'; });
   }));
 
+/* ------------------------------------------------------- the version */
+/* The colophon is plain HTML so it still prints on a page whose script never
+   ran, which makes it a second copy of the version -- and a second copy drifts.
+   Both are read straight out of the source rather than through the engine's
+   exports, because neither belongs to the engine. */
+head('the version, in the two places it is written');
+var vFooter = /<span id="ver">v([0-9]+\.[0-9]+\.[0-9]+)<\/span>/.exec(src);
+var vConst  = /var APP_VERSION = '([0-9]+\.[0-9]+\.[0-9]+)';/.exec(src);
+ckTrue('the footer carries a semver literal', !!vFooter);
+ckTrue('the code declares a semver constant', !!vConst);
+ckTrue('and the two agree', !!vFooter && !!vConst && vFooter[1] === vConst[1],
+  vFooter && vConst ? vFooter[1] + ' vs ' + vConst[1] : 'missing');
+ckTrue('the CSV header is built from the constant, not a third literal',
+  /L\.push\(\[APP_NAME \+ ' ' \+ APP_VERSION\]\)/.test(src));
+ckTrue('the copyright names a holder and a year', /&copy;\s*20\d\d\s+\S+/.test(src));
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

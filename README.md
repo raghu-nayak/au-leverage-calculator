@@ -119,15 +119,16 @@ The engine is pure — no DOM, no globals — and sits between `engine:start` an
 node test.js index.html
 ```
 
-136 assertions covering the tax scale against hand-worked figures, the
+141 assertions covering the tax scale against hand-worked figures, the
 surcharge add-back, both ledgers agreeing when gearing is zero, the debt
 invariants of recycling, margin calls and wipe-outs, the monotonicity the
 break-even bisection depends on, Monte Carlo determinism and band ordering, the
 annual cash identity in all three modes, the rate path (a declared zero step
 matching no step at all, row for row; the re-amortised repayment checked
 against an independent walk of the schedule; the compounded inflation index),
-and a sweep asserting every scenario the sliders can reach produces finite,
-non-negative balances.
+a sweep asserting every scenario the sliders can reach produces finite,
+non-negative balances, and the version in the footer matching the constant the
+code stamps on a CSV.
 
 ## Also
 
@@ -138,6 +139,12 @@ non-negative balances.
   charge. It is the one shape of geared loan here with no margin calls, which
   is why it belongs in that mode rather than the margin one, and it sets the
   shape of the loan without touching the amount you typed.
+- `APP_VERSION` — the version shown in the footer and written into the CSV
+  header. The footer also carries it as a literal so it still prints on a page
+  whose script never ran, and a test holds the two to the same figure. Bump it
+  in the same commit as the change it describes: patch for wording, styling or a
+  corrected figure, minor for a new input, mode or chart, major for a change that
+  makes an existing shared link read differently.
 - Dark and light themes, set before first paint so there is no flash.
 - CSV export carries the inputs, the result, the risk figures and every year.
 - Prints on a light ground with the charts rebuilt for paper.
