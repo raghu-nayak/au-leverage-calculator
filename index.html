@@ -1,0 +1,3193 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Debt Recycling &amp; Leverage Calculator (Australia)</title>
+<meta name="description" content="Model debt recycling, borrowing against your home to invest, and margin loans under Australian tax. Break-even return, holding costs, margin-call risk, and a side-by-side comparison with not borrowing at all.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#272B2F">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2321252A'/%3E%3Cpath d='M4 21h24' stroke='%238E959C' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M16 21 L12 26 L20 26 Z' fill='%238E959C'/%3E%3Cpath d='M6 16 L26 9' stroke='%23F6B72B' stroke-width='3' stroke-linecap='round'/%3E%3Crect x='3' y='13' width='6' height='6' rx='1.5' fill='%23F6B72B'/%3E%3C/svg%3E">
+<style>
+/* ============================================================
+   Design tokens — the same set as the investment growth and FIRE
+   calculators, so the three tools read as one family.
+     dark  primary #F6B72B  secondary #7FB09F  bg #272B2F / paper #21252A
+     light primary #176184  secondary #73AF9A  bg #F8F8F8 / paper #FFFFFF
+   Series colours are re-stepped from the same hue families so they clear
+   the OKLCH lightness band, chroma floor, CVD and contrast checks on both
+   chart surfaces.
+   ============================================================ */
+:root{
+  --r:3px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Helvetica Neue",Arial,sans-serif;
+  --dur:.18s;
+}
+html[data-theme="dark"]{
+  --bg:#272B2F; --card:#21252A; --sunken:#1B1F23; --raised:#2C3137;
+  --hair:#373D45; --grid:#31373E;
+  --ink:#FAFAFA; --ink-2:#BFC5CB; --ink-3:#8E959C;
+  --accent:#F6B72B; --accent-2:#E08301; --accent-ink:#21252A; --accent-soft:rgba(246,182,44,.16);
+  --sec:#7FB09F; --danger:#F7403A; --warn:#FF9800; --good:#2DAB75;
+  --s1:#3788D5; --s2:#2DAB75; --s3:#C48001; --s4:#B0693C;
+  --muted-bar:#4A525B;
+  --shadow:0 1px 2px rgba(0,0,0,.45),0 10px 28px rgba(0,0,0,.26);
+  --track:#31373E;
+}
+html[data-theme="light"]{
+  --bg:#F8F8F8; --card:#FFFFFF; --sunken:#F1F3F4; --raised:#FFFFFF;
+  --hair:#DFE3E6; --grid:#E9ECEE;
+  --ink:#333333; --ink-2:#545C63; --ink-3:#6E767D;
+  --accent:#176184; --accent-2:#C68712; --accent-ink:#FFFFFF; --accent-soft:rgba(23,97,132,.10);
+  --sec:#73AF9A; --danger:#C62828; --warn:#E08301; --good:#039370;
+  --s1:#0262AB; --s2:#039370; --s3:#C99005; --s4:#9A5A2E;
+  --muted-bar:#C3CAD0;
+  --shadow:0 1px 2px rgba(16,24,32,.05),0 8px 22px rgba(16,24,32,.07);
+  --track:#E4E8EB;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);
+  font-size:14px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+h1,h2,h3,p{margin:0}
+button,input,select{font:inherit;color:inherit}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.skip{position:absolute;left:12px;top:-48px;z-index:20;background:var(--accent);color:var(--accent-ink);padding:8px 14px;border-radius:var(--r);font-weight:700;transition:top var(--dur)}
+.skip:focus{top:12px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- top bar ---------- */
+.topbar{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;max-width:1400px;margin:0 auto;padding:22px 20px 16px}
+.brand{display:flex;align-items:center;gap:12px;flex:1 1 320px;min-width:0}
+.brand svg{flex:none;width:38px;height:38px}
+h1{font-size:19px;font-weight:700;letter-spacing:-.35px;line-height:1.2}
+.sub{color:var(--ink-3);font-size:12.5px;margin-top:2px}
+.topbar-actions{display:flex;align-items:center;gap:8px;flex:none}
+
+/* ---------- generic controls ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--raised);border:1px solid var(--hair);color:var(--ink-2);
+  border-radius:var(--r);padding:7px 11px;font-size:12.5px;font-weight:500;
+  cursor:pointer;transition:background var(--dur),border-color var(--dur),color var(--dur);
+  white-space:nowrap;
+}
+.btn:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.btn:active{transform:translateY(.5px)}
+.btn svg{width:14px;height:14px;flex:none}
+.btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+select.sel{background:var(--raised);border:1px solid var(--hair);border-radius:var(--r);padding:7px 9px;font-size:12.5px;cursor:pointer}
+select.sel:hover{border-color:var(--accent)}
+
+/* ---------- layout ---------- */
+.layout{
+  display:grid;grid-template-columns:minmax(292px,362px) minmax(0,1fr);
+  gap:18px;max-width:1400px;margin:0 auto;padding:0 20px 40px;align-items:start;
+}
+.panel{background:var(--card);border:1px solid var(--hair);border-radius:var(--r);box-shadow:var(--shadow);min-width:0}
+/* grid items must be allowed below their min-content, or the nowrap table
+   inflates the whole column and the page scrolls sideways */
+.layout > *,.results > *{min-width:0}
+@media (max-width:860px){
+  .layout{grid-template-columns:minmax(0,1fr)}
+  .inputs{padding-bottom:18px}
+}
+
+/* ---------- inputs panel ---------- */
+.inputs{padding:4px 18px 18px}
+@media (min-width:861px){
+  .inputs{position:sticky;top:14px;max-height:calc(100vh - 28px);overflow-y:auto;overscroll-behavior:contain}
+}
+fieldset{border:0;margin:0;padding:0}
+legend.grp{display:block;width:100%;padding:16px 0 10px;margin:0;font-size:11px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:var(--ink-3)}
+.field{padding:9px 0;border-top:1px solid var(--grid)}
+.field:first-of-type{border-top:0}
+.field-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.field-head label{font-size:13px;font-weight:500;color:var(--ink-2)}
+.num{display:inline-flex;align-items:center;background:var(--sunken);border:1px solid var(--hair);border-radius:var(--r);transition:border-color var(--dur),box-shadow var(--dur)}
+.num:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.num .aff{padding:0 0 0 8px;color:var(--ink-3);font-size:12.5px;user-select:none}
+.num .aff.suf{padding:0 8px 0 0}
+.num input{width:78px;border:0;background:none;padding:6px 6px;text-align:right;font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.num input:focus{outline:none}
+.num.wide input{width:104px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:22px;margin:6px 0 0;background:none;cursor:pointer;display:block}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:var(--track)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:15px;height:15px;border-radius:50%;background:var(--accent);border:2px solid var(--card);margin-top:-6px;box-shadow:0 0 0 1px var(--accent)}
+input[type=range]:hover::-webkit-slider-thumb{background:var(--accent-2);box-shadow:0 0 0 1px var(--accent-2),0 0 0 6px var(--accent-soft)}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:var(--track)}
+input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--accent);border:2px solid var(--card);box-shadow:0 0 0 1px var(--accent)}
+input[type=range]:disabled{cursor:not-allowed;opacity:.45}
+.ticks{display:flex;justify-content:space-between;color:var(--ink-3);font-size:10.5px;margin-top:-1px;font-variant-numeric:tabular-nums}
+.hint{color:var(--ink-3);font-size:11.5px;margin-top:5px}
+.hint b{color:var(--ink-2);font-weight:600}
+.row2{display:flex;gap:8px;margin-top:9px}
+.row2 > label{flex:1 1 0;min-width:0}
+.lbl-sm{display:block;font-size:11px;color:var(--ink-3);margin-bottom:3px}
+.row2 select{width:100%}
+.check{display:flex;align-items:flex-start;gap:9px;margin-top:11px;cursor:pointer}
+.check input{
+  appearance:none;-webkit-appearance:none;flex:none;width:16px;height:16px;margin:1px 0 0;
+  border:1.5px solid var(--hair);border-radius:2px;background:var(--sunken);cursor:pointer;
+  position:relative;transition:background var(--dur),border-color var(--dur);
+}
+.check input:checked{background:var(--accent);border-color:var(--accent)}
+.check input:checked::after{content:"";position:absolute;left:4px;top:1px;width:5px;height:9px;border:solid var(--accent-ink);border-width:0 2px 2px 0;transform:rotate(42deg)}
+.check span{font-size:12.5px;color:var(--ink-2)}
+.field.has-off .row2,.field.has-off .check{opacity:.5}
+select.sel:disabled,.check input:disabled{cursor:not-allowed}
+.act-row{display:flex;gap:8px;flex-wrap:wrap;padding-top:16px;margin-top:14px;border-top:1px solid var(--grid)}
+.disclaimer{color:var(--ink-3);font-size:11px;margin-top:14px;line-height:1.5}
+
+/* ---------- strategy switcher ---------- */
+.modeswitch{padding:14px 0 4px}
+.modeswitch .grp{padding:0 0 8px}
+.seg{display:inline-flex;background:var(--sunken);border:1px solid var(--hair);border-radius:var(--r);padding:2px}
+.seg.full{display:flex;width:100%}
+.seg.full label{flex:1 1 0;text-align:center}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{padding:5px 11px;font-size:12.5px;font-weight:500;color:var(--ink-3);border-radius:2px;cursor:pointer;transition:background var(--dur),color var(--dur);white-space:nowrap}
+.seg label:hover{color:var(--ink)}
+.seg input:checked + label{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.seg input:focus-visible + label{outline:2px solid var(--accent);outline-offset:2px}
+.modenote{font-size:11.5px;color:var(--ink-3);margin-top:8px;line-height:1.5}
+
+/* ---------- results column ---------- */
+.results{display:grid;gap:18px;min-width:0}
+.viewbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 14px;background:var(--card);border:1px solid var(--hair);border-radius:var(--r);box-shadow:var(--shadow)}
+.vb-label{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-3)}
+.spacer{flex:1 1 auto}
+.vb-actions{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:none;align-items:center;gap:7px;font-size:12px;color:var(--ink-2);background:var(--sunken);border:1px dashed var(--hair);border-radius:var(--r);padding:5px 9px}
+.chip.on{display:inline-flex}
+.chip.alarm{border-color:var(--danger);color:var(--ink)}
+.chip b{font-variant-numeric:tabular-nums}
+.chip svg{width:13px;height:13px;flex:none;color:var(--danger)}
+
+/* ---------- hero ---------- */
+.hero{padding:20px 20px 18px}
+.tile-label{font-size:12px;color:var(--ink-3);letter-spacing:.2px}
+.hero-value{font-size:clamp(32px,5vw,50px);font-weight:700;letter-spacing:-1.6px;line-height:1.05;margin-top:4px}
+.hero-value.neg{color:var(--danger)}
+.hero-note{font-size:12.5px;color:var(--ink-2);margin-top:6px}
+.hero-note b{color:var(--ink);font-weight:600}
+.compbar{display:flex;gap:2px;height:30px;margin-top:16px;background:var(--card);border-radius:2px;overflow:visible}
+.compseg{position:relative;min-width:2px;border-radius:2px;display:flex;align-items:center;padding:0 8px;overflow:hidden;font-size:11px;font-weight:700;letter-spacing:.2px;white-space:nowrap;transition:filter var(--dur)}
+.compseg.s1{background:var(--s1)}
+.compseg.gain{background:var(--good)}
+.compseg.loss{background:repeating-linear-gradient(135deg,var(--danger) 0 3px,transparent 3px 7px);border:1px solid var(--danger)}
+.compbar:hover .compseg{filter:saturate(.6)}
+.compbar .compseg:hover{filter:none}
+.comp-cap{display:flex;justify-content:space-between;gap:12px;color:var(--ink-3);font-size:11px;margin-top:7px}
+
+/* ---------- tiles ---------- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(236px,1fr));gap:14px}
+.tile{padding:14px 15px 15px}
+.tile .k{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--ink-3);min-height:17px}
+.dot{width:9px;height:9px;border-radius:2px;flex:none}
+.dot.s1{background:var(--s1)}.dot.s2{background:var(--s2)}.dot.s3{background:var(--s3)}
+.dot.acc{background:var(--accent)}.dot.dgr{background:var(--danger)}
+.tile .v{font-size:22px;font-weight:600;letter-spacing:-.6px;margin-top:5px}
+.tile .m{font-size:11.5px;color:var(--ink-3);margin-top:3px}
+.tile .v.neg{color:var(--danger)}
+.tile .v.pos{color:var(--good)}
+
+/* ---------- chart cards ---------- */
+.card-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 18px 0}
+h2{font-size:14.5px;font-weight:700;letter-spacing:-.2px}
+.card-sub{font-size:12px;color:var(--ink-3);margin-top:3px}
+.chart-wrap{position:relative;padding:6px 12px 4px;touch-action:pan-y}
+.chart-wrap svg{display:block;width:100%;height:auto;overflow:visible}
+.chart-wrap svg:focus{outline:none}
+.chart-wrap svg:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;padding:2px 18px 16px}
+.lg{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-2)}
+.lg .sw{width:12px;height:9px;border-radius:2px;flex:none}
+.lg .swl{width:14px;height:2px;border-radius:2px;flex:none}
+.lg .val{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.tip{
+  position:absolute;z-index:6;pointer-events:none;opacity:0;
+  min-width:178px;max-width:262px;padding:9px 11px;
+  background:var(--raised);border:1px solid var(--hair);border-radius:var(--r);
+  box-shadow:0 6px 22px rgba(0,0,0,.28);transition:opacity var(--dur);
+}
+.tip.on{opacity:1}
+.tip .th{font-size:11px;color:var(--ink-3);letter-spacing:.3px;margin-bottom:6px}
+.tip .tr{display:flex;align-items:center;gap:8px;margin-top:4px}
+.tip .tk{width:14px;height:2px;border-radius:2px;flex:none}
+.tip .tv{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;margin-left:auto;letter-spacing:-.2px}
+.tip .tn{font-size:11.5px;color:var(--ink-3)}
+.tip .tot{border-top:1px solid var(--grid);margin-top:7px;padding-top:6px}
+.tip .tot .tn{color:var(--ink-2)}
+.tip .tot .tv{font-size:15px}
+.tip .alarm .tn,.tip .alarm .tv{color:var(--danger)}
+
+/* ---------- risk panel ---------- */
+.risk{padding:16px 18px 18px}
+.risk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:14px}
+.rk .rv{font-size:20px;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.rk .rv.bad{color:var(--danger)}
+.rk .rv.ok{color:var(--good)}
+.rk .rn{font-size:11.5px;color:var(--ink-3);margin-top:2px;line-height:1.4}
+.meter{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;margin-top:14px;display:flex}
+.meter i{display:block;height:100%}
+.meter i.ok{background:var(--good)}
+.meter i.bad{background:var(--danger)}
+.meter i.tie{background:var(--muted-bar)}
+.meter-cap{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3);margin-top:6px}
+.note{font-size:12px;color:var(--ink-2);margin-top:12px;padding:10px 12px;background:var(--sunken);border-left:2px solid var(--accent);border-radius:2px;line-height:1.5}
+.note.bad{border-left-color:var(--danger)}
+.note b{color:var(--ink);font-weight:600}
+
+/* ---------- table ---------- */
+.table-card{padding-bottom:4px}
+.table-scroll{max-height:440px;overflow:auto;margin:12px 0 0;border-top:1px solid var(--grid)}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px}
+caption{text-align:left;padding:0 18px 8px;color:var(--ink-3);font-size:12px}
+th,td{padding:8px 10px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left;padding-left:18px;position:sticky;left:0;background:var(--card)}
+td:last-child,th:last-child{padding-right:18px}
+thead th{position:sticky;top:0;z-index:2;background:var(--card);color:var(--ink-3);font-weight:600;font-size:11px;letter-spacing:.4px;text-transform:uppercase;border-bottom:1px solid var(--hair)}
+thead th:first-child{z-index:3}
+tbody tr:nth-child(even) td{background:var(--sunken)}
+tbody tr:nth-child(even) td:first-child{background:var(--sunken)}
+tbody tr:hover td{background:var(--accent-soft)}
+tbody td{border-bottom:1px solid var(--grid)}
+tbody td.em{font-weight:600;color:var(--ink)}
+tbody td.bad{color:var(--danger)}
+tbody tr.called td:first-child::after{content:" ⚠";color:var(--danger)}
+tr.tot td,tr.tot td:first-child{font-weight:700;border-top:1px solid var(--hair);border-bottom:0;background:var(--card)}
+
+footer{max-width:1400px;margin:0 auto;padding:4px 20px 44px;color:var(--ink-3);font-size:11.5px;line-height:1.6}
+footer a,.disclaimer a{color:var(--accent)}   /* --accent-2 gold falls under 4.5:1 on white */
+.method{margin-top:14px;padding:15px 17px;background:var(--card);border:1px solid var(--hair);border-radius:var(--r)}
+.method h2{font-size:11px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:var(--ink-3);margin-bottom:9px}
+.method ul{margin:0;padding-left:18px}
+.method li{margin-top:7px}
+.method li b{color:var(--ink-2)}
+.legal{margin-top:14px;padding:15px 17px;background:var(--card);border:1px solid var(--hair);border-radius:var(--r)}
+.legal h2{font-size:11px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:var(--ink-3);margin-bottom:9px}
+.legal p{margin-top:8px}
+.legal p:first-of-type{margin-top:0}
+.legal strong{color:var(--ink-2);font-weight:600}
+
+@media (max-width:560px){
+  .topbar{padding:16px 14px 12px}
+  .layout{padding:0 14px 30px;gap:14px}
+  .results{gap:14px}
+  .inputs{padding:2px 14px 16px}
+  .hero{padding:16px 15px 15px}
+  .card-head,.legend,.risk{padding-left:14px;padding-right:14px}
+  th:first-child,td:first-child{padding-left:14px}
+  .tiles{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+  .seg.full label{padding:5px 4px;font-size:11.5px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ---------- print ---------- */
+@media print{
+  html[data-theme]{
+    --bg:#fff;--card:#fff;--sunken:#fff;--raised:#fff;--hair:#bbb;--grid:#ddd;
+    --ink:#111;--ink-2:#333;--ink-3:#555;--shadow:none;
+  }
+  .topbar-actions,.act-row,.viewbar .btn,input[type=range],.ticks,.skip{display:none!important}
+  .layout{display:block;max-width:none;padding:0}
+  .inputs{position:static;max-height:none;overflow:visible;page-break-after:avoid}
+  /* paper is wide: set the assumptions two-up instead of stretching each row */
+  .fields{columns:2;column-gap:28px}
+  .fields .field{border-top:0;border-bottom:1px solid var(--grid);break-inside:avoid;padding:8px 0}
+  .fields .field:last-child{border-bottom:0}
+  .panel,.viewbar{box-shadow:none;break-inside:avoid}
+  .results{margin-top:14px}
+  .table-scroll{max-height:none;overflow:visible}
+  .tip{display:none}
+}
+</style>
+<script>
+/* Set the theme before first paint so a light-mode reader never sees a dark flash. */
+(function(){
+  try {
+    var t = localStorage.getItem('alc.theme');
+    if (t !== 'dark' && t !== 'light'){
+      t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  } catch(e){}
+})();
+</script>
+</head>
+<body>
+<a class="skip" href="#results">Skip to results</a>
+
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <rect width="32" height="32" rx="6" fill="var(--accent-soft)"></rect>
+      <path d="M4 21h24" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round"></path>
+      <path d="M16 21 L12.5 25.5 L19.5 25.5 Z" fill="var(--ink-3)"></path>
+      <path d="M6 16 L26 9.5" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round"></path>
+      <rect x="3" y="13" width="6" height="6" rx="1.5" fill="var(--accent)"></rect>
+    </svg>
+    <div>
+      <h1>Debt Recycling &amp; Leverage Calculator</h1>
+      <p class="sub">Borrowing to invest under Australian tax — and whether it actually left you ahead.</p>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn" id="themeBtn" type="button" aria-pressed="false">
+      <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"></svg>
+      <span id="themeTxt">Light</span>
+    </button>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ============ INPUTS ============ -->
+  <form class="panel inputs" id="inputs" autocomplete="off" novalidate>
+
+    <div class="modeswitch">
+      <span class="grp" id="modeLbl">Strategy</span>
+      <div class="seg full" role="radiogroup" aria-labelledby="modeLbl">
+        <input type="radio" name="mode" id="mode-recycle" value="recycle" checked><label for="mode-recycle">Debt recycling</label>
+        <input type="radio" name="mode" id="mode-equity" value="equity"><label for="mode-equity">Borrow to invest</label>
+        <input type="radio" name="mode" id="mode-margin" value="margin"><label for="mode-margin">Margin loan</label>
+      </div>
+      <p class="modenote" id="modeNote"></p>
+    </div>
+
+    <fieldset>
+      <legend class="grp">Your income</legend>
+      <div class="fields">
+
+      <div class="field">
+        <div class="field-head">
+          <label for="salary">Taxable salary</label>
+          <span class="num wide"><span class="aff">A$</span><input id="salary" type="text" inputmode="decimal" data-key="salary" data-kind="money"></span>
+        </div>
+        <input type="range" id="salary_r" data-for="salary" min="0" max="500000" step="5000" aria-label="Taxable salary slider">
+        <div class="ticks"><span>A$0</span><span>A$500k</span></div>
+        <p class="hint" id="mrHint"></p>
+        <div class="row2">
+          <label for="salaryGrowth"><span class="lbl-sm">Pay rises</span>
+            <span class="num"><input id="salaryGrowth" type="text" inputmode="decimal" data-key="salaryGrowth" data-kind="pct"><span class="aff suf">%</span></span>
+          </label>
+          <label for="years"><span class="lbl-sm">Over how long</span>
+            <span class="num"><input id="years" type="text" inputmode="numeric" data-key="years" data-kind="int"><span class="aff suf">yrs</span></span>
+          </label>
+        </div>
+        <input type="range" id="years_r" data-for="years" min="1" max="40" step="1" aria-label="Years slider">
+        <div class="ticks"><span>1 yr</span><span>40 yrs</span></div>
+      </div>
+
+      <div class="field">
+        <label class="check"><input type="checkbox" id="family" data-key="family"><span>Couple or family thresholds &mdash; raises the Medicare levy and surcharge lines, nothing else</span></label>
+        <label class="check"><input type="checkbox" id="cover" data-key="cover"><span>I have private hospital cover</span></label>
+        <p class="hint" id="mlsHint"></p>
+      </div>
+      </div>
+    </fieldset>
+
+    <!-- ---- debt recycling ---- -->
+    <fieldset id="fsRecycle">
+      <legend class="grp">Your home loan</legend>
+      <div class="fields">
+      <div class="field">
+        <div class="field-head">
+          <label for="homeBal">Balance owing</label>
+          <span class="num wide"><span class="aff">A$</span><input id="homeBal" type="text" inputmode="decimal" data-key="homeBal" data-kind="money"></span>
+        </div>
+        <input type="range" id="homeBal_r" data-for="homeBal" min="0" max="2000000" step="10000" aria-label="Home loan balance slider">
+        <div class="ticks"><span>A$0</span><span>A$2M</span></div>
+        <div class="row2">
+          <label for="homeRate"><span class="lbl-sm">Interest rate</span>
+            <span class="num"><input id="homeRate" type="text" inputmode="decimal" data-key="homeRate" data-kind="pct"><span class="aff suf">%</span></span>
+          </label>
+          <label for="homeTerm"><span class="lbl-sm">Years left</span>
+            <span class="num"><input id="homeTerm" type="text" inputmode="numeric" data-key="homeTerm" data-kind="int"><span class="aff suf">yrs</span></span>
+          </label>
+        </div>
+        <p class="hint" id="pmtHint"></p>
+      </div>
+      <div class="field">
+        <div class="field-head">
+          <label for="lumpSum">Convert now from savings</label>
+          <span class="num wide"><span class="aff">A$</span><input id="lumpSum" type="text" inputmode="decimal" data-key="lumpSum" data-kind="money"></span>
+        </div>
+        <input type="range" id="lumpSum_r" data-for="lumpSum" min="0" max="500000" step="5000" aria-label="Lump sum to convert slider">
+        <div class="ticks"><span>A$0</span><span>A$500k</span></div>
+        <p class="hint">Cash sitting in your offset or redraw, paid off the loan and immediately drawn again through a separate split to invest.</p>
+      </div>
+      <div class="field">
+        <label class="check"><input type="checkbox" id="recyclePrin" data-key="recyclePrin"><span>Recycle the principal in your normal repayments too</span></label>
+        <p class="hint" id="prinHint"></p>
+      </div>
+      </div>
+    </fieldset>
+
+    <!-- ---- borrow to invest ---- -->
+    <fieldset id="fsEquity" hidden>
+      <legend class="grp">The loan</legend>
+      <div class="fields">
+      <div class="field">
+        <div class="field-head">
+          <label for="borrow">Amount borrowed</label>
+          <span class="num wide"><span class="aff">A$</span><input id="borrow" type="text" inputmode="decimal" data-key="borrow" data-kind="money"></span>
+        </div>
+        <input type="range" id="borrow_r" data-for="borrow" min="0" max="1500000" step="10000" aria-label="Amount borrowed slider">
+        <div class="ticks"><span>A$0</span><span>A$1.5M</span></div>
+        <p class="hint">Drawn against your home or another property and invested as a lump sum on day one.</p>
+      </div>
+      <div class="field">
+        <div class="field-head">
+          <label for="invRate">Interest rate</label>
+          <span class="num"><input id="invRate" type="text" inputmode="decimal" data-key="invRate" data-kind="pct"><span class="aff suf">%</span></span>
+        </div>
+        <input type="range" id="invRate_r" data-for="invRate" min="0" max="15" step="0.05" aria-label="Loan interest rate slider">
+        <div class="ticks"><span>0%</span><span>15%</span></div>
+        <label class="check"><input type="checkbox" id="io" data-key="io"><span>Interest only</span></label>
+        <div class="row2" id="termRow">
+          <label for="loanTerm"><span class="lbl-sm">Repaid over</span>
+            <span class="num"><input id="loanTerm" type="text" inputmode="numeric" data-key="loanTerm" data-kind="int"><span class="aff suf">yrs</span></span>
+          </label>
+        </div>
+        <p class="hint" id="ioHint"></p>
+      </div>
+      </div>
+    </fieldset>
+
+    <!-- ---- margin loan ---- -->
+    <fieldset id="fsMargin" hidden>
+      <legend class="grp">The margin loan</legend>
+      <div class="fields">
+      <div class="field">
+        <div class="field-head">
+          <label for="ownCap">Your own capital</label>
+          <span class="num wide"><span class="aff">A$</span><input id="ownCap" type="text" inputmode="decimal" data-key="ownCap" data-kind="money"></span>
+        </div>
+        <input type="range" id="ownCap_r" data-for="ownCap" min="0" max="1000000" step="10000" aria-label="Own capital slider">
+        <div class="ticks"><span>A$0</span><span>A$1M</span></div>
+      </div>
+      <div class="field">
+        <div class="field-head">
+          <label for="lvrTarget">Starting gearing (LVR)</label>
+          <span class="num"><input id="lvrTarget" type="text" inputmode="decimal" data-key="lvrTarget" data-kind="pct"><span class="aff suf">%</span></span>
+        </div>
+        <input type="range" id="lvrTarget_r" data-for="lvrTarget" min="0" max="80" step="1" aria-label="Starting LVR slider">
+        <div class="ticks"><span>0%</span><span>80%</span></div>
+        <p class="hint" id="lvrHint"></p>
+      </div>
+      <div class="field">
+        <div class="field-head">
+          <label for="marginRate">Margin interest rate</label>
+          <span class="num"><input id="marginRate" type="text" inputmode="decimal" data-key="marginRate" data-kind="pct"><span class="aff suf">%</span></span>
+        </div>
+        <input type="range" id="marginRate_r" data-for="marginRate" min="0" max="20" step="0.05" aria-label="Margin interest rate slider">
+        <div class="ticks"><span>0%</span><span>20%</span></div>
+      </div>
+      <div class="field">
+        <div class="row2">
+          <label for="maxLvr"><span class="lbl-sm">Lender's maximum LVR</span>
+            <span class="num"><input id="maxLvr" type="text" inputmode="decimal" data-key="maxLvr" data-kind="pct"><span class="aff suf">%</span></span>
+          </label>
+          <label for="buffer"><span class="lbl-sm">Buffer before a call</span>
+            <span class="num"><input id="buffer" type="text" inputmode="decimal" data-key="buffer" data-kind="pct"><span class="aff suf">%</span></span>
+          </label>
+        </div>
+        <p class="hint" id="callHint"></p>
+        <label class="check"><input type="checkbox" id="topUp" data-key="topUp"><span>Borrow more as the portfolio grows, to hold the LVR on target</span></label>
+      </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend class="grp">What you can put in</legend>
+      <div class="fields">
+      <div class="field">
+        <div class="field-head">
+          <label for="surplus">Spare cash each year</label>
+          <span class="num wide"><span class="aff">A$</span><input id="surplus" type="text" inputmode="decimal" data-key="surplus" data-kind="money"></span>
+        </div>
+        <input type="range" id="surplus_r" data-for="surplus" min="0" max="200000" step="1000" aria-label="Spare cash each year slider">
+        <div class="ticks"><span>A$0</span><span>A$200k</span></div>
+        <p class="hint">Over and above your normal repayments. The plain comparison spends exactly the same amount.</p>
+        <label class="check"><input type="checkbox" id="indexSurplus" data-key="indexSurplus"><span>Raise it with inflation each year</span></label>
+        <label class="check"><input type="checkbox" id="directTax" data-key="directTax"><span>Put the tax saving straight back in</span></label>
+      </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend class="grp">The investment</legend>
+      <div class="fields">
+      <div class="field">
+        <div class="field-head">
+          <label for="ret">Total return before fees</label>
+          <span class="num"><input id="ret" type="text" inputmode="decimal" data-key="ret" data-kind="pct"><span class="aff suf">%</span></span>
+        </div>
+        <input type="range" id="ret_r" data-for="ret" min="0" max="15" step="0.1" aria-label="Total return slider">
+        <div class="ticks"><span>0%</span><span>15%</span></div>
+        <p class="hint" id="retHint"></p>
+      </div>
+      <div class="field">
+        <div class="field-head">
+          <label for="divYield">Of which income (yield)</label>
+          <span class="num"><input id="divYield" type="text" inputmode="decimal" data-key="divYield" data-kind="pct"><span class="aff suf">%</span></span>
+        </div>
+        <input type="range" id="divYield_r" data-for="divYield" min="0" max="10" step="0.1" aria-label="Income yield slider">
+        <div class="ticks"><span>0%</span><span>10%</span></div>
+        <div class="row2">
+          <label for="franked"><span class="lbl-sm">Franked share</span>
+            <span class="num"><input id="franked" type="text" inputmode="decimal" data-key="franked" data-kind="pct"><span class="aff suf">%</span></span>
+          </label>
+          <label for="fee"><span class="lbl-sm">Annual fee</span>
+            <span class="num"><input id="fee" type="text" inputmode="decimal" data-key="fee" data-kind="pct"><span class="aff suf">%</span></span>
+          </label>
+        </div>
+        <p class="hint" id="yieldHint"></p>
+      </div>
+      <div class="field">
+        <div class="field-head">
+          <label for="vol">Volatility</label>
+          <span class="num"><input id="vol" type="text" inputmode="decimal" data-key="vol" data-kind="pct"><span class="aff suf">%</span></span>
+        </div>
+        <input type="range" id="vol_r" data-for="vol" min="0" max="35" step="0.5" aria-label="Volatility slider">
+        <div class="ticks"><span>0%</span><span>35%</span></div>
+        <p class="hint">How far a year strays from the average. Broad share markets have run around 15%. Set it to 0% to see the smooth arithmetic on its own.</p>
+      </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend class="grp">Assumptions</legend>
+      <div class="fields">
+      <div class="field">
+        <div class="field-head">
+          <label for="inflation">Inflation</label>
+          <span class="num"><input id="inflation" type="text" inputmode="decimal" data-key="inflation" data-kind="pct"><span class="aff suf">%</span></span>
+        </div>
+        <input type="range" id="inflation_r" data-for="inflation" min="0" max="10" step="0.1" aria-label="Inflation slider">
+        <div class="ticks"><span>0%</span><span>10%</span></div>
+        <label class="check"><input type="checkbox" id="indexTax" data-key="indexTax"><span>Index the tax thresholds with inflation</span></label>
+        <label class="check"><input type="checkbox" id="patterns" data-key="patterns"><span>Use patterns as well as colour in charts</span></label>
+        <p class="hint" id="taxHint"></p>
+      </div>
+      </div>
+    </fieldset>
+
+    <div class="act-row">
+      <button class="btn" type="button" id="resetBtn">Reset</button>
+    </div>
+    <p class="disclaimer">
+      Educational tool only — <strong>not financial, tax or legal advice</strong>. Gearing multiplies losses as
+      well as gains, and interest is only deductible where the borrowed money is genuinely used to
+      produce assessable income. Whether a structure works for you, and whether it survives scrutiny,
+      depends on facts this page knows nothing about. Provided without warranty and used entirely at
+      your own risk — see the <a href="#disclaimer">full disclaimer</a>.
+    </p>
+  </form>
+
+  <!-- ============ RESULTS ============ -->
+  <section class="results" id="results" aria-label="Results">
+
+    <div class="viewbar">
+      <span class="vb-label" id="viewLbl">Show</span>
+      <div class="seg" role="radiogroup" aria-labelledby="viewLbl">
+        <input type="radio" name="basis" id="basis-nom" value="nominal" checked><label for="basis-nom">Actual money</label>
+        <input type="radio" name="basis" id="basis-real" value="real"><label for="basis-real">Today's money</label>
+      </div>
+      <span class="chip" id="warnChip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 9v5"/><path d="M12 17.5v.01"/><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+        <b id="warnTxt"></b>
+      </span>
+      <span class="spacer"></span>
+      <div class="vb-actions">
+      <button class="btn" type="button" id="linkBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg>
+        <span id="linkTxt">Copy link</span>
+      </button>
+      <button class="btn" type="button" id="csvBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 21h16"/></svg>
+        CSV
+      </button>
+      <button class="btn" type="button" id="printBtn">Print</button>
+      </div>
+    </div>
+
+    <div class="panel hero">
+      <p class="tile-label" id="heroLabel">What the borrowing was worth</p>
+      <p class="hero-value" id="heroValue">—</p>
+      <p class="hero-note" id="heroNote"></p>
+      <div class="compbar" id="compBar" role="img" aria-label="The plain alternative, and what the borrowing added to it"></div>
+      <div class="comp-cap"><span id="compCapL"></span><span id="compCapR"></span></div>
+    </div>
+
+    <div class="tiles" id="tiles"></div>
+
+    <div class="panel chart-card">
+      <div class="card-head">
+        <div>
+          <h2>With the borrowing, and without it</h2>
+          <p class="card-sub" id="netSub"></p>
+        </div>
+      </div>
+      <div class="chart-wrap" id="netWrap">
+        <svg id="netSvg" role="img" tabindex="0" aria-describedby="netDesc"></svg>
+        <div class="tip" id="netTip" role="tooltip" aria-hidden="true"></div>
+      </div>
+      <div class="legend" id="netLegend"></div>
+      <p class="sr-only" id="netDesc"></p>
+      <p class="sr-only" id="netLive" aria-live="polite"></p>
+    </div>
+
+    <div class="panel risk" id="riskCard">
+      <div>
+        <h2 id="riskH">What could go wrong</h2>
+        <p class="card-sub" id="riskSub"></p>
+      </div>
+      <div class="risk-grid" id="riskGrid"></div>
+      <div class="meter" id="riskMeter" role="img"></div>
+      <div class="meter-cap"><span id="meterL"></span><span id="meterR"></span></div>
+      <p class="note" id="riskNote"></p>
+    </div>
+
+    <div class="panel chart-card">
+      <div class="card-head">
+        <div>
+          <h2 id="costH">What it costs to hold, year by year</h2>
+          <p class="card-sub" id="costSub"></p>
+        </div>
+      </div>
+      <div class="chart-wrap" id="costWrap">
+        <svg id="costSvg" role="img" tabindex="0" aria-describedby="costDesc"></svg>
+        <div class="tip" id="costTip" role="tooltip" aria-hidden="true"></div>
+      </div>
+      <div class="legend" id="costLegend"></div>
+      <p class="sr-only" id="costDesc"></p>
+      <p class="sr-only" id="costLive" aria-live="polite"></p>
+    </div>
+
+    <div class="panel chart-card">
+      <div class="card-head">
+        <div>
+          <h2 id="debtH">The debt behind it</h2>
+          <p class="card-sub" id="debtSub"></p>
+        </div>
+      </div>
+      <div class="chart-wrap" id="debtWrap">
+        <svg id="debtSvg" role="img" tabindex="0" aria-describedby="debtDesc"></svg>
+        <div class="tip" id="debtTip" role="tooltip" aria-hidden="true"></div>
+      </div>
+      <div class="legend" id="debtLegend"></div>
+      <p class="sr-only" id="debtDesc"></p>
+      <p class="sr-only" id="debtLive" aria-live="polite"></p>
+    </div>
+
+    <div class="panel chart-card">
+      <div class="card-head">
+        <div>
+          <h2>If the return were different</h2>
+          <p class="card-sub" id="sensSub"></p>
+        </div>
+      </div>
+      <div class="chart-wrap" id="sensWrap">
+        <svg id="sensSvg" role="img" tabindex="0" aria-describedby="sensDesc"></svg>
+        <div class="tip" id="sensTip" role="tooltip" aria-hidden="true"></div>
+      </div>
+      <p class="sr-only" id="sensDesc"></p>
+      <p class="sr-only" id="sensLive" aria-live="polite"></p>
+    </div>
+
+    <div class="panel chart-card table-card">
+      <div class="card-head"><div><h2>Year by year</h2><p class="card-sub" id="tableSub"></p></div></div>
+      <div class="table-scroll">
+        <table id="yearTable">
+          <caption class="sr-only">Each year of the geared plan: the portfolio, the loans behind it, the interest, the income, the tax and the net position.</caption>
+          <thead><tr id="tableHead"></tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<footer>
+  <p>Built as a single self-contained HTML file — no server, no tracking, no data leaves your browser. Every setting lives in the page URL, so a copied link reproduces the exact scenario.</p>
+
+  <section class="method" aria-labelledby="method-h">
+    <h2 id="method-h">How it works</h2>
+    <ul>
+      <li><b>Everything is compared against not borrowing.</b> The same spare cash is spent either way: the plain alternative puts it into extra home loan repayments while a home loan exists, and into the same unleveraged portfolio once it is gone. Both sides see the same market every year, so the difference between them is the borrowing and nothing else.</li>
+      <li><b>The headline is measured after closing the position.</b> Sell the portfolio, pay capital gains tax on the discounted gain at your marginal rate, clear the debt. A geared position that only looks ahead while the tax is still deferred is not ahead, and both sides are measured the same way.</li>
+      <li><b>Interest is deductible where the borrowed money produces assessable income</b> — decided by the use of the funds, not by the security behind the loan. Deductions reduce taxable income, and any excess is carried forward as a tax loss.</li>
+      <li><b>Franked dividends are grossed up and the credit is refunded.</b> Below the 30% company rate the credit is worth more than the tax on the dividend, which is a large part of why geared Australian share portfolios are held for income at all.</li>
+      <li><b>A net investment loss is added back for the Medicare levy surcharge.</b> Negative gearing cuts your income tax without moving you down a surcharge tier — the one place the deduction buys you nothing.</li>
+      <li><b>Debt recycling keeps the total debt the same size and changes what it is doing.</b> Cash pays down the home loan and is drawn again through a separate split to invest, so the deductible share climbs while the balance does not fall. Recycle the scheduled principal as well and the total debt never falls at all.</li>
+      <li><b>A margin call is settled back to the lender's maximum, not to the buffer.</b> Selling moves both the loan and the portfolio, so it takes more than the gap to close it. The proceeds go to the lender and the sale realises a capital gain.</li>
+      <li><b>A year that cannot pay its own interest sells units to cover it</b>, which realises a gain and shrinks the position — the quiet way a geared holding erodes in a flat market. Last year's capital gains tax is paid out of this year's cash, as it is in life.</li>
+      <li><b>The range of outcomes</b> draws a fresh return for each year of each of 1,000 runs from a normal distribution around your expected return, and re-runs both sides against it. The seed is fixed, so the same inputs always give the same fan.</li>
+      <li><b>Tax is worked out on one person's income.</b> The couple-or-family switch raises the Medicare levy and surcharge thresholds and does nothing else — there is no income splitting, no partner's income, and dependent children (which raise both thresholds again) are not modelled.</li>
+      <li><b>Tax parameters are FY 2026-27</b> and live in <code>data/au-tax.json</code> in the repository, inlined into this page so it still makes no network requests. Thresholds are indexed with inflation unless you switch that off.</li>
+    </ul>
+  </section>
+
+  <section class="legal" id="disclaimer" aria-labelledby="disclaimer-h">
+    <h2 id="disclaimer-h">Disclaimer</h2>
+    <p><strong>This calculator is provided for general information and educational purposes only. It is not
+    financial, investment, tax or legal advice.</strong> It takes no account of your objectives, financial
+    situation or needs, and nothing in it is a recommendation to borrow, to invest, to adopt any
+    structure, or to acquire, hold or dispose of any financial product.</p>
+    <p><strong>Gearing magnifies losses as well as gains.</strong> Borrowing to invest can leave you owing more than
+    the investments are worth, and a margin loan can be called at the worst possible moment, forcing a
+    sale into a falling market. The results here are <strong>hypothetical illustrations</strong> generated from the
+    figures you enter, on simplifying assumptions: annual steps, an average cost base, capital gains
+    discounted on the assumption every parcel was held more than twelve months, a single marginal
+    rate scale, and no allowance for loan establishment costs, break fees, lenders mortgage insurance,
+    brokerage, bid–ask spreads, buy/sell spreads or stamp duty. Interest rates are assumed constant
+    and are not; lending criteria, maximum gearing ratios and buffers vary by lender and by security
+    and change without notice. No result is a projection, forecast or guarantee.</p>
+    <p><strong>Deductibility depends on facts this page cannot see.</strong> Interest is deductible only to the extent
+    borrowed funds are actually used to produce assessable income; mixing purposes in one account
+    creates a mixed-purpose loan whose repayments are apportioned, and a redraw is a new borrowing
+    whose deductibility turns on what it is spent on. Arrangements whose dominant purpose is a tax
+    benefit can attract the general anti-avoidance provisions. Getting any of this wrong is expensive.
+    Speak to a registered tax agent before acting.</p>
+    <p><strong>The tool is provided “as is”, without warranty of any kind</strong>, express or implied, including
+    without limitation any warranty of accuracy, completeness, reliability, merchantability or fitness
+    for a particular purpose. To the maximum extent permitted by law, the author and any distributor
+    accept <strong>no responsibility or liability whatsoever</strong> for any error, omission, defect or inaccuracy
+    in the calculations, content or output, nor for any loss or damage — direct, indirect,
+    consequential or otherwise — arising from your use of, or reliance on, this tool. You use it
+    entirely at your own risk, and you are responsible for verifying any figure before acting on it.</p>
+    <p>Before making any financial decision, seek advice from a licensed financial adviser, a registered
+    tax agent, or another qualified professional who can consider your individual circumstances.</p>
+  </section>
+</footer>
+
+<script>
+(function(){
+"use strict";
+
+/* ================================================================
+   1. ENGINE  (pure: no DOM, no globals — also unit-tested standalone)
+   ================================================================ */
+/* --- engine:start --- */
+/* AU tax parameters. Generated from data/au-tax.json by tools/embed.py —
+   edit the JSON, not the line below, then run the script. */
+/* AU-TAX-JSON:start */
+var TAX = {"financialYear":"2026-27","residentIncomeTax":{"brackets":[{"upTo":18200,"rate":0.0},{"upTo":45000,"rate":0.15},{"upTo":135000,"rate":0.3},{"upTo":190000,"rate":0.37},{"upTo":null,"rate":0.45}]},"medicareLevy":{"rate":0.02,"shadeInRate":0.1,"lowerThreshold":{"single":28011,"family":47238}},"medicareLevySurcharge":{"tiers":[{"tier":"base","singleFrom":0,"familyFrom":0,"rate":0.0},{"tier":"1","singleFrom":105000,"familyFrom":210000,"rate":0.01},{"tier":"2","singleFrom":123000,"familyFrom":246000,"rate":0.0125},{"tier":"3","singleFrom":164000,"familyFrom":328000,"rate":0.015}]},"lowIncomeTaxOffset":{"max":700,"taper1":{"from":37500,"rate":0.05},"taper2":{"from":45000,"rate":0.015}},"capitalGains":{"individualDiscount":0.5},"franking":{"companyTaxRate":0.3}};
+/* AU-TAX-JSON:end */
+
+function clamp(v, lo, hi){ return v < lo ? lo : v > hi ? hi : v; }
+
+/* ================================================================
+   1. TAX
+
+   Every threshold is multiplied by `ix`, an indexation factor. Left at 1 the
+   brackets stay frozen in today's dollars and a nominal projection walks you
+   up them year after year; set to inflation and the scale keeps pace, which
+   is roughly what has happened over the long run.
+   ================================================================ */
+function bracketTax(ti, ix){
+  var t = 0, prev = 0, B = TAX.residentIncomeTax.brackets;
+  for (var i = 0; i < B.length; i++){
+    var top = B[i].upTo == null ? Infinity : B[i].upTo * ix;
+    if (ti <= prev) break;
+    t += (Math.min(ti, top) - prev) * B[i].rate;
+    prev = top;
+  }
+  return t;
+}
+function lito(ti, ix){
+  var L = TAX.lowIncomeTaxOffset, mx = L.max * ix;
+  var t1 = L.taper1.from * ix, t2 = L.taper2.from * ix;
+  if (ti <= t1) return mx;
+  if (ti <= t2) return Math.max(0, mx - (ti - t1) * L.taper1.rate);
+  return Math.max(0, mx - (t2 - t1) * L.taper1.rate - (ti - t2) * L.taper2.rate);
+}
+/* The levy has its own low-income shade-in and no offset reduces it. */
+function medicareLevy(ti, family, ix){
+  var M = TAX.medicareLevy;
+  var lower = (family ? M.lowerThreshold.family : M.lowerThreshold.single) * ix;
+  if (ti <= lower) return 0;
+  return Math.min(M.shadeInRate * (ti - lower), M.rate * ti);
+}
+/* Charged on taxable income, but the tier is chosen on income for MLS
+   purposes — which adds a net investment loss back. Gear negatively and the
+   deduction cuts your income tax without moving you down a surcharge tier:
+   the one place where negative gearing genuinely buys you nothing. */
+function mlsRate(mlsIncome, family, ix){
+  var T = TAX.medicareLevySurcharge.tiers, r = 0;
+  for (var i = 0; i < T.length; i++){
+    var from = (family ? T[i].familyFrom : T[i].singleFrom) * ix;
+    if (mlsIncome >= from) r = T[i].rate;
+  }
+  return r;
+}
+/* ti: taxable income. mlsInc: income for surcharge purposes (defaults to ti).
+   cover: private hospital cover, which switches the surcharge off. */
+function incomeTax(ti, o){
+  ti = Math.max(0, ti);
+  var ix = o.ix, fam = o.family;
+  var t = Math.max(0, bracketTax(ti, ix) - lito(ti, ix)) + medicareLevy(ti, fam, ix);
+  if (!o.cover) t += ti * mlsRate(o.mlsInc == null ? ti : o.mlsInc, fam, ix);
+  return t;
+}
+function marginalRate(ti, o){
+  var d = 100;
+  var a = Object.assign({}, o, { mlsInc: null });
+  return (incomeTax(ti + d, a) - incomeTax(ti, a)) / d;
+}
+function frankingOn(divs, frankedShare){
+  var c = TAX.franking.companyTaxRate;
+  return divs * frankedShare * c / (1 - c);
+}
+function cgDiscount(){ return TAX.capitalGains.individualDiscount; }
+
+/* Level annual repayment on a loan of B at rate r over n years. */
+function pmt(B, r, n){
+  if (n <= 0 || B <= 0) return 0;
+  if (r <= 1e-9) return B / n;
+  return B * r / (1 - Math.pow(1 + r, -n));
+}
+
+/* ================================================================
+   2. THE PROJECTION
+
+   Two ledgers, one market. Every year the geared plan and the plain
+   alternative are handed the same return, so the difference between them is
+   only ever the borrowing — never a luckier draw.
+
+   THE GEARED SIDE holds a portfolio, a deductible loan behind it, and (when
+   you are recycling) the non-deductible home loan the strategy is eating
+   into. THE PLAIN SIDE spends the same money out of pocket without borrowing:
+   extra repayments off the home loan while one exists, then an unleveraged
+   portfolio.
+
+   Inside a year, in order: the contractual loan movements, then a fixed point
+   that settles how much cash there is to work with, then growth on the
+   opening balance plus half the year's flows, then the margin test.
+
+   The fixed point is there because recycling is circular — what you can pay
+   off the home loan depends on the tax refund, the refund depends on how much
+   deductible debt you drew during the year, and that is the amount itself. It
+   settles in two or three passes.
+
+   BOTH SIDES USE THE SAME CONVENTIONS: dividends and growth accrue on the
+   opening balance plus half the year's net flows, dividends are franked to
+   the same degree, and each side pays its own tax. With the borrowing set to
+   nothing the two ledgers agree to the cent, which is the test that keeps the
+   comparison honest.
+   ================================================================ */
+function project(p, opt){
+  opt = opt || {};
+  var years = Math.max(1, Math.round(p.years));
+  var seq = opt.returns || null;
+  var nets = opt.nets || null;          /* geared net wealth per year, for the fan */
+  var everUnder = false;                /* the deductible loan outgrew the portfolio */
+  var light = !!opt.light;
+
+  var mode = p.mode;
+  var disc = cgDiscount();
+
+  /* ---- opening positions ---------------------------------------- */
+  var port = 0, cost = 0, inv = 0, home = 0;   /* geared */
+  var bPort = 0, bCost = 0, bHome = 0;         /* plain */
+  var homePmt = 0, invPmt = 0;
+  var lossCf = 0, capLossCf = 0, bLossCf = 0, cgtDue = 0;
+
+  if (mode === 'recycle'){
+    home = p.homeBal; bHome = p.homeBal;
+    homePmt = pmt(p.homeBal, p.homeRate, p.homeTerm);
+    /* A lump out of the offset or an existing redraw: paid off the home loan
+       and drawn again into a fresh split, so the total debt does not move and
+       the deductible share jumps on day one. The plain side puts the same
+       lump against the loan and leaves it there. */
+    var lump = Math.min(p.lumpSum, home);
+    home -= lump; inv += lump; port += lump; cost += lump;
+    bHome -= lump;
+  } else if (mode === 'equity'){
+    inv = p.borrow; port = p.borrow; cost = p.borrow;
+    invPmt = p.io ? 0 : pmt(p.borrow, p.invRate, p.loanTerm);
+  } else {                                     /* margin */
+    inv = p.ownCap * p.lvrTarget / Math.max(1e-9, 1 - p.lvrTarget);
+    port = p.ownCap + inv; cost = port;
+    bPort = p.ownCap; bCost = p.ownCap;
+  }
+
+  var rows = [], calls = [], everCall = false, worstLvr = 0, sold = 0, unfundedAll = 0;
+  /* Both ledgers open on the same net position, whichever mode this is: a
+     lump moved from the offset into a split changes what the debt is doing,
+     not what you are worth. */
+  var open = port - inv - home;
+  if (nets) nets[0] = open;
+
+  for (var t = 0; t < years; t++){
+    var callSold = 0;                    /* units the lender took, not units you spent */
+    var ix = p.indexTax ? Math.pow(1 + p.inflation, t) : 1;
+    var sal = p.salary * Math.pow(1 + p.salaryGrowth, t);
+    var g = Math.max(-0.85, p.ret + (seq ? seq[t] : 0));   /* total return this year */
+    var grow = g - p.divYield - p.fee;                     /* the capital part of it */
+    var surplus = p.surplus * (p.indexSurplus ? Math.pow(1 + p.inflation, t) : 1);
+    var TO = { ix: ix, family: p.family, cover: p.cover };
+
+    var portOpen = port, invOpen = inv, homeOpen = home;
+    var bPortOpen = bPort, bHomeOpen = bHome;
+    var taxSalary = incomeTax(sal, TO);
+
+    /* ---- the loans' own contractual year ------------------------ */
+    var homeInt = homeOpen * p.homeRate;
+    var schedPrin = mode === 'recycle' ? clamp(homePmt - homeInt, 0, homeOpen) : 0;
+    var invPrin = (mode === 'equity' && !p.io) ? clamp(invPmt - invOpen * p.invRate, 0, invOpen) : 0;
+    /* Recycled principal leaves the home loan and is drawn again into the
+       deductible split, so the debt is the same size and a larger share of it
+       is working. The total never falls — the part of this strategy that
+       deserves to be said out loud. */
+    var redrawPrin = (mode === 'recycle' && p.recyclePrin) ? schedPrin : 0;
+    var rate = mode === 'margin' ? p.marginRate : p.invRate;
+    /* The repayment is committed cash until the loan it services is gone, and
+       then it is not. Whichever side clears its home loan first gets that
+       money back to invest, which is most of the case for paying the mortgage
+       off — so both sides are credited with it the year it frees up, or the
+       comparison quietly rewards the side that stays in debt longest. */
+    var freed = mode === 'recycle' ? Math.max(0, homePmt - homeInt - schedPrin) : 0;
+
+    var cgtPaid = cgtDue;   /* last year's bill, settled at this year's return */
+
+    /* ---- how much cash the year actually has -------------------- */
+    var R = 0, buy = 0, need = 0, unfunded = 0, flow = 0, base = portOpen;
+    var invInt = 0, divs = 0, frk = 0, ti = 0, taxInc = 0, carry = 0;
+    for (var it = 0; it < 30; it++){
+      var draw = R + redrawPrin;
+      flow = draw + buy - need;
+      base = Math.max(0, portOpen + flow / 2);
+      invInt = Math.max(0, invOpen + draw / 2 - invPrin / 2) * rate;
+      divs = base * p.divYield;
+      frk  = frankingOn(divs, p.franked);
+
+      ti = sal + divs + frk - invInt - lossCf;
+      carry = 0;
+      if (ti < 0){ carry = -ti; ti = 0; }
+      /* the surcharge tier is chosen on income with the net investment loss
+         added back, so a deduction that wipes out income tax leaves the
+         surcharge exactly where it was */
+      var mlsInc = ti + Math.max(0, invInt - (divs + frk));
+      taxInc = incomeTax(ti, Object.assign({ mlsInc: mlsInc }, TO)) - frk;
+
+      /* Last year's capital gains tax falls due at this year's tax return. */
+      var pool = surplus + freed + divs - cgtDue - (p.directTax ? (taxInc - taxSalary) : 0);
+      var avail = pool - invInt - invPrin;
+      var Rn = 0, buyN = 0, needN = 0, unN = 0;
+      if (avail < -0.005){
+        /* the year did not fund itself, so units go */
+        var sellable = Math.max(0, portOpen + draw + buy);
+        needN = Math.min(-avail, sellable);
+        unN = -avail - needN;                /* nothing left to sell: you owe it */
+      } else if (mode === 'recycle'){
+        Rn  = clamp(avail, 0, Math.max(0, homeOpen - schedPrin));
+        buyN = Math.max(0, avail - Rn);      /* home loan gone: buy with cash */
+      } else {
+        buyN = Math.max(0, avail);
+      }
+      var moved = Math.abs(Rn - R) + Math.abs(buyN - buy) + Math.abs(needN - need);
+      R = Rn; buy = buyN; need = needN; unfunded = unN;
+      if (it > 0 && moved < 0.01) break;
+    }
+    lossCf = carry;
+
+    /* ---- apply the geared year ---------------------------------- */
+    var draw2 = R + redrawPrin;
+    home = Math.max(0, homeOpen - schedPrin - R);
+    inv  = Math.max(0, invOpen + draw2 - invPrin) + unfunded;
+    port = portOpen + draw2 + buy;
+    cost = cost + draw2 + buy;
+    unfundedAll += unfunded;
+
+    var gain = 0, soldY = 0;
+    if (need > 0.005){
+      var res = sell(port, cost, need);
+      gain = res.gain; port = res.port; cost = res.cost; soldY = need;
+    }
+    port = Math.max(0, port + base * grow);
+
+    /* ---- the margin test --------------------------------------- */
+    var lvr = port > 0 ? inv / port : (inv > 0 ? 1 : 0);
+    if (lvr > worstLvr) worstLvr = lvr;
+    var called = false;
+    if (mode === 'margin' && inv > 0 && lvr > p.maxLvr + p.buffer + 1e-12){
+      called = true; everCall = true;
+      calls.push({ y: t + 1, lvr: lvr });
+      /* A call is settled back to the maximum, not to the buffer, and the
+         proceeds go straight to the lender. Selling S moves both sides of the
+         ratio, hence the 1/(1-L). */
+      var S = clamp((inv - p.maxLvr * port) / Math.max(1e-9, 1 - p.maxLvr), 0, port);
+      var r2 = sell(port, cost, S);
+      gain += r2.gain; port = r2.port; cost = r2.cost;
+      inv = Math.max(0, inv - S);
+      soldY += S; callSold = S;
+    }
+    /* Gearing up as the portfolio grows holds the loan at the target LVR.
+       Borrowing A raises the portfolio by A as well, so it takes A/(1-L)
+       to move the ratio by L. This is the aggressive setting and it is off
+       unless asked for. */
+    if (mode === 'margin' && p.topUp && !called){
+      var A = (p.lvrTarget * port - inv) / Math.max(1e-9, 1 - p.lvrTarget);
+      if (A > 1){ inv += A; port += A; cost += A; }
+    }
+    lvr = port > 0 ? inv / port : (inv > 0 ? 1 : 0);
+    if (inv > port + 0.005) everUnder = true;
+    sold += soldY;
+
+    /* Capital losses only ever offset capital gains, and they are applied
+       before the discount. Whatever is left is taxed on top of the year's
+       income and the bill arrives with next year's return. */
+    var cgt = 0;
+    if (gain !== 0){
+      var netG = gain - capLossCf;
+      if (netG < 0){ capLossCf = -netG; netG = 0; } else capLossCf = 0;
+      var dg = netG * (1 - disc);
+      if (dg > 0){
+        var o1 = Object.assign({ mlsInc: ti + dg }, TO), o2 = Object.assign({ mlsInc: ti }, TO);
+        cgt = incomeTax(ti + dg, o1) - incomeTax(ti, o2);
+      }
+    }
+    cgtDue = cgt;
+
+    /* ================= the plain alternative ==================== */
+    var bDivs = 0, bFrk = 0, bTi = 0, bTax = 0, bExtra = 0, bBuy = 0;
+    var bBase = bPortOpen, bCarry = 0;
+    var bHomeInt = bHomeOpen * p.homeRate;
+    var bSched = mode === 'recycle' ? clamp(homePmt - bHomeInt, 0, bHomeOpen) : 0;
+    var bFreed = mode === 'recycle' ? Math.max(0, homePmt - bHomeInt - bSched) : 0;
+    for (var bt = 0; bt < 30; bt++){
+      bBase = Math.max(0, bPortOpen + bBuy / 2);
+      bDivs = bBase * p.divYield;
+      bFrk = frankingOn(bDivs, p.franked);
+      bTi = sal + bDivs + bFrk - bLossCf;
+      bCarry = 0;
+      if (bTi < 0){ bCarry = -bTi; bTi = 0; }
+      bTax = incomeTax(bTi, TO) - bFrk;
+      var bPool = surplus + bFreed + bDivs - (p.directTax ? (bTax - taxSalary) : 0);
+      /* Extra repayments go off the loan first; once it is clear the same
+         money has to go somewhere, so it buys the portfolio instead. */
+      var bExtraN = clamp(bPool, 0, Math.max(0, bHomeOpen - bSched));
+      var bBuyN = Math.max(0, bPool - bExtraN);
+      var bMoved = Math.abs(bBuyN - bBuy) + Math.abs(bExtraN - bExtra);
+      bExtra = bExtraN; bBuy = bBuyN;
+      if (bt > 0 && bMoved < 0.01) break;
+    }
+    bLossCf = bCarry;
+    bHome = Math.max(0, bHomeOpen - bSched - bExtra);
+    bPort = Math.max(0, bPortOpen + bBuy + bBase * grow);
+    bCost = bCost + bBuy;
+
+    /* the fan is drawn over the same lines the deterministic run produces, so
+       it has to be measured the same way: after tax, after clearing the debt */
+    if (nets) nets[t + 1] = exitValue(port, cost, inv + home, sal, ix, p, disc);
+
+    if (!light){
+      rows.push({
+        y: t + 1, ix: ix, sal: sal, g: g,
+        port: port, cost: cost, inv: inv, home: home,
+        debt: inv + home, net: port - inv - home,
+        divs: divs, frk: frk, invInt: invInt, homeInt: homeInt,
+        schedPrin: schedPrin, invPrin: invPrin, recycled: draw2, buy: buy, freed: freed,
+        taxInc: taxInc, taxSalary: taxSalary, saved: taxSalary - taxInc,
+        cgt: cgt, cgtPaid: cgtPaid, sold: soldY, callSold: callSold, need: need, unfunded: unfunded,
+        surplus: surplus,
+        lvr: lvr, call: called,
+        dedShare: (inv + home) > 0 ? inv / (inv + home) : 0,
+        /* The real cost of holding the position, whether or not the refund is
+           ploughed back in: reinvesting it changes where the money goes, not
+           whether you got it. */
+        outPocket: invInt + invPrin - divs - (taxSalary - taxInc),
+        bPort: bPort, bHome: bHome, bNet: bPort - bHome,
+        exitLev: exitValue(port, cost, inv + home, sal, ix, p, disc),
+        exitBase: exitValue(bPort, bCost, bHome, sal, ix, p, disc)
+      });
+    }
+  }
+
+  var last = rows.length ? rows[rows.length - 1] : null;
+  var salEnd = p.salary * Math.pow(1 + p.salaryGrowth, years - 1);
+  var ixEnd  = p.indexTax ? Math.pow(1 + p.inflation, years - 1) : 1;
+  var exL = last ? last.exitLev  : exitValue(port,  cost,  inv + home, salEnd, ixEnd, p, disc);
+  var exB = last ? last.exitBase : exitValue(bPort, bCost, bHome,      salEnd, ixEnd, p, disc);
+  return {
+    p: p, rows: rows,
+    open: open,
+    port: port, cost: cost, inv: inv, home: home, debt: inv + home, net: port - inv - home,
+    bPort: bPort, bCost: bCost, bHome: bHome, bNet: bPort - bHome,
+    exitLev: exL, exitBase: exB, benefit: exL - exB,
+    calls: calls, everCall: everCall, everUnder: everUnder,
+    worstLvr: worstLvr, sold: sold, unfunded: unfundedAll
+  };
+
+  function sell(P, K, S){
+    S = clamp(S, 0, P);
+    var share = P > 0 ? S / P : 0;
+    var basis = K * share;
+    return { gain: S - basis, port: P - S, cost: K - basis };
+  }
+}
+
+/* What the position is actually worth once you close it: sell the portfolio,
+   pay the capital gains tax at your marginal rate on the discounted gain, and
+   clear the debt. Both sides are measured this way, because a geared position
+   that looks ahead only while the tax is still deferred is not ahead. */
+function exitValue(port, cost, debt, sal, ix, p, disc){
+  var gain = Math.max(0, port - cost);
+  var dg = gain * (1 - disc);
+  var o = { ix: ix, family: p.family, cover: p.cover };
+  var cgt = dg > 0 ? incomeTax(sal + dg, Object.assign({ mlsInc: sal + dg }, o))
+                   - incomeTax(sal, Object.assign({ mlsInc: sal }, o)) : 0;
+  return port - cgt - debt;
+}
+
+/* ================================================================
+   3. A THOUSAND OTHER MARKETS
+   Fixed seed, so the same inputs always draw the same fan. Both sides of
+   every run see the same year-by-year deviation.
+   ================================================================ */
+function mulberry32(a){
+  return function(){
+    a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function gaussPair(rnd){
+  var u = 1 - rnd(), v = rnd();
+  var m = Math.sqrt(-2 * Math.log(u));
+  return [m * Math.cos(6.283185307179586 * v), m * Math.sin(6.283185307179586 * v)];
+}
+var PCT = [10, 25, 50, 75, 90];
+function monteCarlo(p, paths){
+  var years = Math.max(1, Math.round(p.years));
+  var n = years + 1;
+  var cols = [];
+  for (var y = 0; y < n; y++) cols.push(new Float64Array(paths));
+  var rnd = mulberry32(0x5AFE1E7D);
+  var seq = new Float64Array(years);
+  var nets = new Float64Array(n);
+  var opt = { returns: seq, nets: nets, light: true };
+  var ahead = 0, behind = 0, called = 0, under = 0, spare = null;
+  var lvrs = [], bens = [];
+  for (var i = 0; i < paths; i++){
+    for (var y2 = 0; y2 < years; y2++){
+      var z;
+      if (spare != null){ z = spare; spare = null; }
+      else { var pr = gaussPair(rnd); z = pr[0]; spare = pr[1]; }
+      seq[y2] = p.vol * z;
+    }
+    var r = project(p, opt);
+    for (var y3 = 0; y3 < n; y3++) cols[y3][i] = nets[y3];
+    /* A dollar either way is a tie, not a win and not a loss. Counting an
+       exactly-nil difference as "behind" would report a scenario where the
+       borrowing changed nothing as one where it lost. */
+    if (r.benefit > 1) ahead++;
+    else if (r.benefit < -1) behind++;
+    bens.push(r.benefit);
+    if (r.everCall) called++;
+    /* Underwater means the deductible loan outgrew the portfolio it bought —
+       the condition that matters whether or not a home loan is also in play. */
+    if (r.everUnder) under++;
+    lvrs.push(r.worstLvr);
+  }
+  var bands = PCT.map(function(){ return new Array(n); });
+  for (var y5 = 0; y5 < n; y5++){
+    var c = cols[y5];
+    c.sort();
+    for (var b = 0; b < PCT.length; b++){
+      var pos = clamp(Math.round((PCT[b] / 100) * (paths - 1)), 0, paths - 1);
+      bands[b][y5] = c[pos];
+    }
+  }
+  lvrs.sort(function(a, b){ return a - b; });
+  bens.sort(function(a, b){ return a - b; });
+  var at = function(arr, q){
+    return arr[clamp(Math.round(q * (arr.length - 1)), 0, arr.length - 1)];
+  };
+  return {
+    paths: paths, bands: bands,
+    /* What the borrowing was worth, best and worst: the spread of the
+       difference between the two sides, not of either side on its own. */
+    benefit: { p10: at(bens, 0.10), p50: at(bens, 0.50), p90: at(bens, 0.90),
+               worst: bens[0], best: bens[bens.length - 1] },
+    ahead: ahead, aheadRate: ahead / paths,
+    behind: behind, behindRate: behind / paths,
+    tied: paths - ahead - behind, tiedRate: (paths - ahead - behind) / paths,
+    called: called, callRate: called / paths,
+    under: under, underRate: under / paths,
+    medianWorstLvr: at(lvrs, 0.50), p95WorstLvr: at(lvrs, 0.95)
+  };
+}
+
+/* The return at which the geared plan and the plain one land in the same
+   place. Below it the borrowing cost you money; above it the borrowing paid.
+   The benefit rises monotonically with the return — more return on the same
+   debt can only help — so a bisection is safe and takes about forty passes to
+   land inside a hundredth of a per cent. */
+function breakeven(p){
+  var lo = -0.20, hi = 0.40;
+  var f = function(r){ return project(Object.assign({}, p, { ret: r }), { light: true }).benefit; };
+  var flo = f(lo), fhi = f(hi);
+  if (flo > 0) return { rate: lo, below: true };     /* helps even in a bad market */
+  if (fhi < 0) return { rate: hi, above: true };     /* never helps in a sane one */
+  for (var i = 0; i < 44; i++){
+    var mid = (lo + hi) / 2;
+    if (f(mid) < 0) lo = mid; else hi = mid;
+  }
+  return { rate: (lo + hi) / 2 };
+}
+/* --- engine:end --- */
+
+/* ================================================================
+   3. STATE
+   ================================================================ */
+var DEFAULTS = {
+  mode:'recycle', years:20, salary:180000, salaryGrowth:2, family:false, cover:true,
+  homeBal:600000, homeRate:6, homeTerm:25, recyclePrin:true, lumpSum:0,
+  borrow:250000, invRate:6.5, io:true, loanTerm:20,
+  ownCap:200000, lvrTarget:50, marginRate:8.5, maxLvr:70, buffer:5, topUp:false,
+  surplus:30000, indexSurplus:false, directTax:true,
+  ret:8, divYield:3, franked:70, fee:0.2, vol:15,
+  inflation:2.5, indexTax:true,
+  basis:'nominal', patterns:false
+};
+var LIMITS = {
+  years:[1,40], salary:[0,5000000], salaryGrowth:[0,15],
+  homeBal:[0,20000000], homeRate:[0,25], homeTerm:[1,40], lumpSum:[0,20000000],
+  borrow:[0,20000000], invRate:[0,25], loanTerm:[1,40],
+  ownCap:[0,20000000], lvrTarget:[0,90], marginRate:[0,30], maxLvr:[1,95], buffer:[0,40],
+  surplus:[0,2000000], ret:[0,30], divYield:[0,20], franked:[0,100], fee:[0,5], vol:[0,60],
+  inflation:[0,15]
+};
+var INT_KEYS  = { years:1, homeTerm:1, loanTerm:1 };
+var BOOL_KEYS = { family:1, cover:1, recyclePrin:1, io:1, topUp:1,
+                  indexSurplus:1, directTax:1, indexTax:1, patterns:1 };
+/* short keys keep a shared link inside a message-app preview */
+var SHORT = {
+  mode:'m', years:'y', salary:'s', salaryGrowth:'sg', family:'fm', cover:'hc',
+  homeBal:'hb', homeRate:'hr', homeTerm:'ht', recyclePrin:'rp', lumpSum:'ls',
+  borrow:'bw', invRate:'ir', io:'io', loanTerm:'lt',
+  ownCap:'oc', lvrTarget:'lv', marginRate:'mr', maxLvr:'mx', buffer:'bf', topUp:'tu',
+  surplus:'sp', indexSurplus:'xs', directTax:'dt',
+  ret:'r', divYield:'dy', franked:'fk', fee:'fe', vol:'v',
+  inflation:'n', indexTax:'xt', basis:'b', patterns:'g'
+};
+var MODES = ['recycle','equity','margin'];
+var state = Object.assign({}, DEFAULTS);
+
+function params(s){
+  return {
+    mode: s.mode, years: s.years,
+    salary: s.salary, salaryGrowth: s.salaryGrowth / 100,
+    family: !!s.family, cover: !!s.cover,
+    ret: s.ret / 100, divYield: s.divYield / 100, franked: s.franked / 100,
+    fee: s.fee / 100, vol: s.vol / 100,
+    inflation: s.inflation / 100, indexTax: !!s.indexTax, indexSurplus: !!s.indexSurplus,
+    surplus: s.surplus, directTax: !!s.directTax,
+    homeBal: s.homeBal, homeRate: s.homeRate / 100, homeTerm: s.homeTerm,
+    recyclePrin: !!s.recyclePrin, lumpSum: s.lumpSum,
+    borrow: s.borrow, invRate: s.invRate / 100, io: !!s.io, loanTerm: s.loanTerm,
+    ownCap: s.ownCap, lvrTarget: s.lvrTarget / 100, marginRate: s.marginRate / 100,
+    maxLvr: s.maxLvr / 100, buffer: s.buffer / 100, topUp: !!s.topUp
+  };
+}
+/* The deductible rate for whichever loan the current strategy uses. */
+function loanRate(){ return state.mode === 'margin' ? state.marginRate : state.invRate; }
+
+/* ---- URL + storage ---------------------------------------------- */
+var STORE_KEY = 'alc.v1';
+
+function encodeState(){
+  var out = [];
+  Object.keys(SHORT).forEach(function(k){
+    var v = state[k];
+    if (typeof v === 'boolean') v = v ? 1 : 0;
+    out.push(SHORT[k] + '=' + encodeURIComponent(v));
+  });
+  return out.join('&');
+}
+function applyRaw(obj){
+  var inv = {};
+  Object.keys(SHORT).forEach(function(k){ inv[SHORT[k]] = k; });
+  Object.keys(obj).forEach(function(sk){
+    var key = inv[sk] || (SHORT[sk] ? sk : null);
+    if (!key) return;
+    var raw = obj[sk];
+    if (key === 'mode'){ if (MODES.indexOf(raw) >= 0) state.mode = raw; return; }
+    if (key === 'basis'){ state.basis = raw === 'real' ? 'real' : 'nominal'; return; }
+    if (BOOL_KEYS[key]){ state[key] = (raw === '1' || raw === 'true'); return; }
+    var n = parseFloat(String(raw).replace(/,/g, ''));
+    if (!isFinite(n)) return;
+    var lim = LIMITS[key];
+    state[key] = lim ? clamp(n, lim[0], lim[1]) : n;
+    if (INT_KEYS[key]) state[key] = Math.round(state[key]);
+  });
+  reconcile();
+}
+/* The lender's maximum and the buffer are the call line; a starting LVR above
+   it would be called on day one before the market did anything, which is not
+   a scenario any lender would write. */
+function reconcile(){
+  Object.keys(INT_KEYS).forEach(function(k){
+    state[k] = clamp(Math.round(state[k]), LIMITS[k][0], LIMITS[k][1]);
+  });
+  state.lvrTarget = Math.min(state.lvrTarget, state.maxLvr + state.buffer);
+}
+function parseHash(){
+  var h = location.hash.replace(/^#/, '');
+  if (!h) return false;
+  var obj = {}, got = false;
+  h.split('&').forEach(function(kv){
+    var i = kv.indexOf('=');
+    if (i > 0){ obj[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1)); got = true; }
+  });
+  if (got) applyRaw(obj);
+  return got;
+}
+function persist(){
+  var enc = encodeState();
+  try { history.replaceState(null, '', '#' + enc); } catch(e){ location.hash = enc; }
+  try { localStorage.setItem(STORE_KEY, enc); } catch(e){}
+}
+function loadStored(){
+  var s = null;
+  try { s = localStorage.getItem(STORE_KEY); } catch(e){}
+  if (!s) return false;
+  var obj = {};
+  s.split('&').forEach(function(kv){
+    var i = kv.indexOf('=');
+    if (i > 0) obj[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1));
+  });
+  applyRaw(obj);
+  return true;
+}
+
+/* ================================================================
+   4. FORMATTING
+   ================================================================ */
+var nfPlain = null;
+try { nfPlain = new Intl.NumberFormat('en-AU', { maximumFractionDigits:0 }); } catch(e){}
+function plain(v){
+  v = Math.round(v || 0);
+  return nfPlain ? nfPlain.format(v) : String(v);
+}
+function money(v){
+  if (!isFinite(v)) return '—';
+  return (v < 0 ? '-' : '') + 'A$' + plain(Math.abs(v));
+}
+/* Compact for axes and tiles: A$1.24M, A$450k, A$9,800 */
+function moneyC(v){
+  if (!isFinite(v)) return '—';
+  var neg = v < 0, a = Math.abs(v), s;
+  if (a >= 1e12)     s = trim(a / 1e12) + 'T';
+  else if (a >= 1e9) s = trim(a / 1e9) + 'B';
+  else if (a >= 1e6) s = trim(a / 1e6) + 'M';
+  else if (a >= 1e4) s = trim(a / 1e3) + 'k';
+  else               s = plain(a);
+  return (neg ? '-' : '') + 'A$' + s;
+  function trim(n){
+    var d = n < 10 ? 2 : n < 100 ? 1 : 0;
+    return String(parseFloat(n.toFixed(d)));
+  }
+}
+function signed(v){ return (v >= 0 ? '+' : '-') + money(Math.abs(v)).replace('-', ''); }
+function pc(v, d){
+  var k = Math.pow(10, d == null ? 1 : d);
+  return (Math.round(v * k) / k) + '%';
+}
+function pcOf(frac, d){ return pc(frac * 100, d == null ? 1 : d); }
+function esc(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+  });
+}
+/* One deflator for the whole page: "today's money" is a display choice, never
+   a change to the projection, so every figure divides by the same factor for
+   the year it belongs to. */
+function defl(y){
+  return state.basis === 'real' ? Math.pow(1 + state.inflation / 100, y) : 1;
+}
+function dv(v, y){ return v / defl(y); }
+function modeWord(){
+  return { recycle:'debt recycling', equity:'borrowing to invest', margin:'the margin loan' }[state.mode];
+}
+function planWord(){
+  return { recycle:'Recycling', equity:'Borrowing to invest', margin:'The margin loan' }[state.mode];
+}
+function plainWord(){
+  return state.mode === 'recycle' && state.homeBal > 0
+    ? 'paying the loan down instead'
+    : 'investing the same cash unleveraged';
+}
+
+/* ================================================================
+   5. CHART PRIMITIVES
+   ================================================================ */
+function $(s){ return document.querySelector(s); }
+function cssv(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function r1(n){ return Math.round(n * 10) / 10; }
+
+function niceStep(span, target){
+  var raw = span / Math.max(2, target);
+  if (!(raw > 0) || !isFinite(raw)) return 1;
+  var mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  var n = raw / mag;
+  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * mag;
+}
+/* A signed axis: the domain is widened to whole steps at both ends so zero is
+   always on a gridline, which is what makes a diverging chart readable. */
+function niceSigned(lo, hi, target){
+  if (!isFinite(lo)) lo = 0;
+  if (!isFinite(hi)) hi = 0;
+  lo = Math.min(0, lo); hi = Math.max(0, hi);
+  if (hi - lo < 1e-9) hi = lo + 1;
+  var step = niceStep(hi - lo, target);
+  var a = Math.floor(lo / step + 1e-9) * step, b = Math.ceil(hi / step - 1e-9) * step;
+  if (b - a < step) b = a + step;
+  var ticks = [];
+  for (var v = a; v <= b + step * 1e-6; v += step) ticks.push(Math.abs(v) < step * 1e-6 ? 0 : v);
+  return { lo:a, hi:b, ticks:ticks };
+}
+function xTicks(years){
+  var cands = [1, 2, 5, 10, 15, 20, 25], step = 25;
+  for (var i = 0; i < cands.length; i++){ if (years / cands[i] <= 8){ step = cands[i]; break; } }
+  var out = [];
+  for (var v = 0; v <= years + 1e-9; v += step) out.push(Math.round(v));
+  var last = out[out.length - 1];
+  if (years - last > step * 0.4) out.push(years);
+  else if (last !== years) out[out.length - 1] = years;
+  return out;
+}
+function txt(tag, cls, s){
+  var e = document.createElement(tag);
+  e.className = cls; e.textContent = s;
+  return e;
+}
+function placeTip(tip, ctx, sx, sy){
+  var sr = ctx.svg.getBoundingClientRect(), wr = ctx.wrap.getBoundingClientRect();
+  var kx = sr.width / ctx.W, ky = sr.height / ctx.H;
+  var px = (sr.left - wr.left) + sx * kx;
+  var py = (sr.top - wr.top) + sy * ky;
+  var tw = tip.offsetWidth || 190, th = tip.offsetHeight || 110;
+  var left = px + 16;
+  if (left + tw > wr.width - 6) left = px - tw - 16;
+  tip.style.left = Math.max(6, left) + 'px';
+  tip.style.top = clamp(py - th / 2, 6, Math.max(6, wr.height - th - 6)) + 'px';
+}
+function hideTip(id){
+  var t = $(id);
+  t.classList.remove('on');
+  t.setAttribute('aria-hidden', 'true');
+}
+/* Every chart readout, so one gesture — or one edit — can close the lot. */
+var TIPS = [];
+function hideTipsExcept(wrap){
+  for (var i = 0; i < TIPS.length; i++) if (TIPS[i].wrap !== wrap) TIPS[i].hide();
+}
+function wireTip(wrap, hide){
+  TIPS.push({ wrap: wrap, hide: hide });
+  /* A touch pointer is destroyed the instant the finger lifts, and that fires
+     pointerleave — so hiding it there would wipe the readout the tap had just
+     asked for. On touch it stays put until you tap somewhere else. */
+  wrap.addEventListener('pointerleave', function(e){ if (e.pointerType !== 'touch') hide(); });
+  /* and the browser decided the gesture was a scroll after all */
+  wrap.addEventListener('pointercancel', hide);
+}
+function tipRow(tip, colour, name, value, cls){
+  var el = document.createElement('div');
+  el.className = 'tr' + (cls ? ' ' + cls : '');
+  if (colour){
+    var k = document.createElement('span');
+    k.className = 'tk';
+    k.style.background = colour;
+    el.appendChild(k);
+  }
+  el.appendChild(txt('span', 'tn', name));
+  el.appendChild(txt('span', 'tv', value));
+  tip.appendChild(el);
+  return el;
+}
+function cols(names){
+  var o = {};
+  names.forEach(function(k){ o[k] = cssv(k); });
+  return o;
+}
+function gridAndY(s, c, ticks, Y, L, plotW, fmt){
+  ticks.forEach(function(tv){
+    var y = r1(Y(tv)), zero = Math.abs(tv) < 1e-9;
+    s.push('<line x1="' + L + '" y1="' + y + '" x2="' + (L + plotW) + '" y2="' + y +
+           '" stroke="' + (zero ? c['--hair'] : c['--grid']) + '" stroke-width="' + (zero ? 1.5 : 1) + '"></line>');
+    s.push('<text x="' + (L - 9) + '" y="' + (y + 4) + '" text-anchor="end" font-size="10.5" fill="' + c['--ink-3'] +
+           '" style="font-variant-numeric:tabular-nums">' + esc(zero ? '0' : (fmt || moneyC)(tv)) + '</text>');
+  });
+}
+
+/* ================================================================
+   6. CHART — WITH THE BORROWING, AND WITHOUT IT
+   Two after-tax net-wealth lines over one market, with the fan of a thousand
+   other markets behind the geared one.
+   ================================================================ */
+var N = null;
+
+function renderNet(sim, mc){
+  var wrap = $('#netWrap'), svg = $('#netSvg');
+  var W = Math.max(300, Math.round(wrap.clientWidth - 24));
+  var narrow = W < 580;
+  var H = W < 520 ? 258 : 336;
+  var L = narrow ? 54 : 66, R = narrow ? 16 : 104, T = 18, B = 42;
+  var plotW = W - L - R, plotH = H - T - B;
+  var c = cols(['--accent','--accent-soft','--s1','--s2','--s3','--card','--grid','--hair',
+                '--ink','--ink-2','--ink-3','--danger','--good','--muted-bar']);
+
+  var years = sim.p.years;
+  var LEV = [dv(sim.open, 0)], BASE = [dv(sim.open, 0)];
+  sim.rows.forEach(function(r){
+    LEV.push(dv(r.exitLev, r.y));
+    BASE.push(dv(r.exitBase, r.y));
+  });
+  var lo = Math.min.apply(null, LEV.concat(BASE));
+  var hi = Math.max.apply(null, LEV.concat(BASE));
+  var band = null;
+  if (mc && state.vol > 0){
+    band = mc.bands.map(function(b){
+      return b.map(function(v, i){ return dv(v, i); });
+    });
+    lo = Math.min(lo, Math.min.apply(null, band[0]));
+    hi = Math.max(hi, Math.max.apply(null, band[4]));
+  }
+  var dom = niceSigned(lo, hi, W < 520 ? 4 : 5);
+  var X = function(i){ return L + (i / Math.max(1, years)) * plotW; };
+  var Y = function(v){ return T + plotH - ((clamp(v, dom.lo, dom.hi) - dom.lo) / (dom.hi - dom.lo)) * plotH; };
+
+  function line(arr){
+    var d = '';
+    for (var i = 0; i < arr.length; i++) d += (i ? 'L' : 'M') + r1(X(i)) + ' ' + r1(Y(arr[i]));
+    return d;
+  }
+  function ribbon(a, b){
+    var d = '', i;
+    for (i = 0; i < a.length; i++) d += (i ? 'L' : 'M') + r1(X(i)) + ' ' + r1(Y(a[i]));
+    for (i = b.length - 1; i >= 0; i--) d += 'L' + r1(X(i)) + ' ' + r1(Y(b[i]));
+    return d + 'Z';
+  }
+
+  var s = [];
+  gridAndY(s, c, dom.ticks, Y, L, plotW);
+  xTicks(years).forEach(function(yr){
+    s.push('<text x="' + r1(X(yr)) + '" y="' + (T + plotH + 18) + '" text-anchor="middle" font-size="10.5" fill="' +
+           c['--ink-3'] + '" style="font-variant-numeric:tabular-nums">' + (yr === 0 ? 'now' : yr) + '</text>');
+  });
+  s.push('<text x="' + (L + plotW / 2) + '" y="' + (T + plotH + 35) + '" text-anchor="middle" font-size="10" fill="' +
+         c['--ink-3'] + '">years</text>');
+
+  /* the fan: two ribbons, the wider one fainter, so the middle half reads as
+     the likely region without hiding the edges */
+  if (band){
+    s.push('<path d="' + ribbon(band[4], band[0]) + '" fill="' + c['--accent'] + '" opacity="0.13"></path>');
+    s.push('<path d="' + ribbon(band[3], band[1]) + '" fill="' + c['--accent'] + '" opacity="0.20"></path>');
+    s.push('<path d="' + line(band[2]) + '" fill="none" stroke="' + c['--accent'] +
+           '" stroke-width="1" stroke-dasharray="1 3" opacity="0.85"></path>');
+  }
+
+  /* the plain alternative first, so the geared line sits over it */
+  s.push('<path d="' + line(BASE) + '" fill="none" stroke="' + c['--ink-3'] +
+         '" stroke-width="2" stroke-dasharray="6 4" stroke-linecap="round"></path>');
+  s.push('<path d="' + line(LEV) + '" fill="none" stroke="' + c['--card'] +
+         '" stroke-width="5" opacity="0.75" stroke-linecap="round"></path>');
+  s.push('<path d="' + line(LEV) + '" fill="none" stroke="' + c['--accent'] +
+         '" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"></path>');
+
+  /* margin calls, marked where they happened */
+  sim.rows.forEach(function(r){
+    if (!r.call) return;
+    var x = r1(X(r.y)), y = r1(Y(LEV[r.y]));
+    s.push('<path d="M' + x + ' ' + (y - 15) + ' l4.6 8 l-9.2 0 Z" fill="' + c['--danger'] + '"></path>');
+    s.push('<circle cx="' + x + '" cy="' + y + '" r="3.4" fill="' + c['--danger'] +
+           '" stroke="' + c['--card'] + '" stroke-width="1.6"></circle>');
+  });
+
+  /* end labels in the right gutter, with a collision skip */
+  if (!narrow){
+    var lx = L + plotW + 9, placed = [];
+    var put = function(y, s2, fill, weight, size){
+      y = clamp(y, T + 8, T + plotH);
+      for (var i = 0; i < placed.length; i++) if (Math.abs(placed[i] - y) < 14) return;
+      placed.push(y);
+      s.push('<text x="' + lx + '" y="' + r1(y) + '" font-size="' + (size || 10.5) + '" font-weight="' +
+             (weight || 400) + '" fill="' + fill + '">' + esc(s2) + '</text>');
+    };
+    var n = LEV.length - 1;
+    put(Y(LEV[n]) - 5, moneyC(LEV[n]), c['--ink'], 700, 12);
+    put(Y(LEV[n]) + 9, planWord(), c['--accent'], 600);
+    put(Y(BASE[n]) + 3, moneyC(BASE[n]), c['--ink-2'], 600, 11);
+    put(Y(BASE[n]) + 15, 'Without it', c['--ink-3'], 500);
+  }
+
+  s.push('<g id="nHover"></g>');
+  s.push('<rect x="' + L + '" y="' + T + '" width="' + plotW + '" height="' + plotH +
+         '" fill="transparent" pointer-events="all" id="nHit"></rect>');
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  svg.setAttribute('aria-label', 'Net wealth after tax with the borrowing and without it, over ' + years +
+    ' years. Use the left and right arrow keys to step through it.');
+  svg.innerHTML = s.join('');
+
+  N = { svg:svg, wrap:wrap, LEV:LEV, BASE:BASE, band:band, rows:sim.rows,
+        L:L, T:T, plotW:plotW, plotH:plotH, W:W, H:H, dom:dom, years:years, c:c, i:-1 };
+
+  $('#netDesc').textContent = 'Two lines over ' + years + ' years. ' + planWord() + ' ends at ' +
+    money(LEV[LEV.length-1]) + ' after tax and after clearing the debt; ' + plainWord() + ' ends at ' +
+    money(BASE[BASE.length-1]) + '. A difference of ' + money(LEV[LEV.length-1] - BASE[BASE.length-1]) + '.' +
+    (band ? ' A shaded fan behind them covers the middle 80% of a thousand simulated markets.' : '') +
+    (sim.calls.length ? ' ' + sim.calls.length + ' margin call' + (sim.calls.length > 1 ? 's are' : ' is') +
+      ' marked in red.' : '');
+  $('#netSub').textContent = 'Net wealth after selling up, paying the capital gains tax and clearing the debt' +
+    (state.basis === 'real' ? ", in today's money" : '') + '. Both sides spend the same ' +
+    money(state.surplus) + ' a year and see the same market.';
+}
+
+function netAt(i){
+  if (!N) return;
+  i = clamp(i | 0, 0, N.LEV.length - 1);
+  N.i = i;
+  var X = function(k){ return N.L + (k / Math.max(1, N.years)) * N.plotW; };
+  var Y = function(v){ return N.T + N.plotH - ((clamp(v, N.dom.lo, N.dom.hi) - N.dom.lo) / (N.dom.hi - N.dom.lo)) * N.plotH; };
+  var x = X(i), c = N.c, h = [];
+  h.push('<line x1="' + r1(x) + '" y1="' + N.T + '" x2="' + r1(x) + '" y2="' + (N.T + N.plotH) +
+         '" stroke="' + c['--ink-3'] + '" stroke-width="1" opacity="0.65"></line>');
+  h.push('<circle cx="' + r1(x) + '" cy="' + r1(Y(N.BASE[i])) + '" r="4" fill="' + c['--ink-3'] +
+         '" stroke="' + c['--card'] + '" stroke-width="2"></circle>');
+  h.push('<circle cx="' + r1(x) + '" cy="' + r1(Y(N.LEV[i])) + '" r="4.8" fill="' + c['--accent'] +
+         '" stroke="' + c['--card'] + '" stroke-width="2"></circle>');
+  var layer = N.svg.querySelector('#nHover');
+  if (layer) layer.innerHTML = h.join('');
+
+  var tip = $('#netTip'), row = i > 0 ? N.rows[i - 1] : null;
+  tip.textContent = '';
+  tip.appendChild(txt('div', 'th', (i === 0 ? 'Today' : 'Year ' + i) +
+    (state.basis === 'real' ? " · today's money" : '')));
+  var diff = N.LEV[i] - N.BASE[i];
+  tipRow(tip, null, diff >= 0 ? 'Ahead by' : 'Behind by', money(Math.abs(diff)), 'tot');
+  tipRow(tip, c['--accent'], planWord(), money(N.LEV[i]));
+  tipRow(tip, c['--ink-3'], 'Without it', money(N.BASE[i]));
+  if (row){
+    tipRow(tip, null, 'Portfolio', money(dv(row.port, row.y)));
+    tipRow(tip, null, 'Debt', money(dv(row.debt, row.y)));
+    if (row.call) tipRow(tip, null, 'Margin call — sold', money(dv(row.callSold, row.y)), 'alarm');
+  }
+  if (N.band){
+    tipRow(tip, null, 'Range of markets',
+      moneyC(N.band[0][i]) + ' – ' + moneyC(N.band[4][i]), 'tot');
+  }
+  placeTip(tip, N, x, Y(N.LEV[i]));
+  tip.classList.add('on');
+  tip.setAttribute('aria-hidden', 'false');
+  $('#netLive').textContent = (i === 0 ? 'Today' : 'Year ' + i) + ': ' + planWord() + ' ' +
+    money(N.LEV[i]) + ', without it ' + money(N.BASE[i]) + ', ' +
+    (diff >= 0 ? 'ahead by ' : 'behind by ') + money(Math.abs(diff));
+}
+
+/* ================================================================
+   7. CHART — WHAT IT COSTS TO HOLD
+   Costs below the line, what pays for them above it, and the net as a line.
+   ================================================================ */
+var CO = null;
+
+function renderCost(sim){
+  var wrap = $('#costWrap'), svg = $('#costSvg');
+  var W = Math.max(300, Math.round(wrap.clientWidth - 24));
+  var narrow = W < 580;
+  var H = W < 520 ? 236 : 288;
+  var L = narrow ? 54 : 66, R = 16, T = 20, B = 44;
+  var plotW = W - L - R, plotH = H - T - B;
+  var c = cols(['--s1','--s2','--s3','--muted-bar','--grid','--hair','--ink','--ink-2','--ink-3','--card','--danger','--good']);
+
+  var bars = sim.rows.map(function(r){
+    var k = defl(r.y);
+    var up = { divs: r.divs / k, saved: Math.max(0, r.saved) / k };
+    var dn = { invInt: r.invInt / k, invPrin: r.invPrin / k,
+               extraTax: Math.max(0, -r.saved) / k };
+    return { y: r.y, up: up, dn: dn,
+             upSum: up.divs + up.saved,
+             dnSum: dn.invInt + dn.invPrin + dn.extraTax,
+             net: -r.outPocket / k, row: r };
+  });
+  var lo = 0, hi = 0;
+  bars.forEach(function(b){
+    if (b.upSum > hi) hi = b.upSum;
+    if (b.net > hi) hi = b.net;
+    if (-b.dnSum < lo) lo = -b.dnSum;
+    if (b.net < lo) lo = b.net;
+  });
+  var dom = niceSigned(lo, hi, W < 520 ? 3 : 4);
+  var Y = function(v){ return T + plotH - ((clamp(v, dom.lo, dom.hi) - dom.lo) / (dom.hi - dom.lo)) * plotH; };
+  var band = plotW / bars.length;
+  var bw = Math.max(2, Math.min(22, band * 0.62));
+
+  var s = [];
+  s.push(patternDefs(c));
+  gridAndY(s, c, dom.ticks, Y, L, plotW);
+
+  bars.forEach(function(b, i){
+    var cx = L + band * (i + 0.5), x = cx - bw / 2;
+    /* upward stack */
+    var acc = 0;
+    [['divs','--s2',1],['saved','--s3',2]].forEach(function(sp){
+      var v = b.up[sp[0]];
+      if (v <= 0) return;
+      var y0 = Y(acc), y1 = Y(acc + v);
+      s.push('<rect x="' + r1(x) + '" y="' + r1(y1) + '" width="' + r1(bw) + '" height="' + r1(Math.max(0.6, y0 - y1)) +
+             '" fill="' + fillOf(sp[1], sp[2], c) + '"></rect>');
+      acc += v;
+    });
+    /* downward stack */
+    acc = 0;
+    [['invInt','--s1',0],['invPrin','--muted-bar',0],['extraTax','--danger',3]].forEach(function(sp){
+      var v = b.dn[sp[0]];
+      if (v <= 0) return;
+      var y0 = Y(-acc), y1 = Y(-acc - v);
+      s.push('<rect x="' + r1(x) + '" y="' + r1(y0) + '" width="' + r1(bw) + '" height="' + r1(Math.max(0.6, y1 - y0)) +
+             '" fill="' + fillOf(sp[1], sp[2], c) + '"></rect>');
+      acc += v;
+    });
+    s.push('<rect x="' + r1(L + band * i) + '" y="' + T + '" width="' + r1(band) + '" height="' + plotH +
+           '" fill="transparent" pointer-events="all" class="cHit" data-i="' + i + '"></rect>');
+  });
+
+  /* the net line: above zero the position paid for itself that year */
+  var d = '';
+  bars.forEach(function(b, i){
+    d += (i ? 'L' : 'M') + r1(L + band * (i + 0.5)) + ' ' + r1(Y(b.net));
+  });
+  s.push('<path d="' + d + '" fill="none" stroke="' + c['--card'] + '" stroke-width="4.5" opacity="0.8"></path>');
+  s.push('<path d="' + d + '" fill="none" stroke="' + c['--ink'] + '" stroke-width="2" stroke-linejoin="round"></path>');
+
+  xTicks(sim.p.years).forEach(function(yr){
+    if (yr < 1) return;
+    s.push('<text x="' + r1(L + band * (yr - 0.5)) + '" y="' + (T + plotH + 18) + '" text-anchor="middle" font-size="10.5" fill="' +
+           c['--ink-3'] + '" style="font-variant-numeric:tabular-nums">' + yr + '</text>');
+  });
+  s.push('<text x="' + (L + plotW / 2) + '" y="' + (T + plotH + 36) + '" text-anchor="middle" font-size="10" fill="' +
+         c['--ink-3'] + '">years</text>');
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  svg.setAttribute('aria-label', 'What the geared position costs to hold each year. Use the left and right arrow keys to step through it.');
+  svg.innerHTML = s.join('');
+
+  CO = { svg:svg, wrap:wrap, bars:bars, L:L, T:T, plotW:plotW, plotH:plotH, W:W, H:H,
+         band:band, dom:dom, c:c, Y:Y, i:-1 };
+
+  var tot = sim.rows.reduce(function(a, r){
+    a.i += r.invInt; a.p += r.invPrin; a.d += r.divs; a.s += r.saved; a.o += r.outPocket;
+    return a;
+  }, { i:0, p:0, d:0, s:0, o:0 });
+  $('#costDesc').textContent = 'Column chart. Over ' + sim.p.years + ' years the deductible interest came to ' +
+    money(tot.i) + ', the investment income to ' + money(tot.d) + ', and the tax ' +
+    (tot.s >= 0 ? 'saved to ' + money(tot.s) : 'cost an extra ' + money(-tot.s)) + ', leaving ' +
+    (tot.o >= 0 ? money(tot.o) + ' to find out of pocket' : money(-tot.o) + ' left over') + '.';
+  $('#costSub').textContent = 'Costs below the line, what pays for them above it. Where the black line ' +
+    'sits above zero the position paid for itself that year, refund included.';
+
+  var lg = $('#costLegend');
+  lg.textContent = '';
+  [['--s2','Investment income', tot.d, 1], ['--s3','Tax saved', Math.max(0, tot.s), 2],
+   ['--s1','Deductible interest', tot.i, 0], ['--muted-bar','Loan principal', tot.p, 0],
+   ['--danger','Extra tax', Math.max(0, -tot.s), 3]
+  ].forEach(function(e){
+    if (e[2] <= 0.5 && e[0] !== '--s1') return;
+    var el = document.createElement('span');
+    el.className = 'lg';
+    var sw = document.createElement('span');
+    sw.className = 'sw';
+    sw.style.background = cssv(e[0]);
+    if (state.patterns && e[3]) sw.style.background =
+      'repeating-linear-gradient(' + (e[3] === 1 ? 45 : e[3] === 2 ? 135 : 90) + 'deg,' + cssv(e[0]) +
+      ' 0 2px,transparent 2px 5px),' + cssv(e[0]) + '55';
+    el.appendChild(sw);
+    el.appendChild(document.createTextNode(e[1]));
+    el.appendChild(txt('span', 'val', money(e[2])));
+    lg.appendChild(el);
+  });
+  var nl = document.createElement('span');
+  nl.className = 'lg';
+  var nls = document.createElement('span');
+  nls.className = 'swl';
+  nls.style.background = cssv('--ink');
+  nl.appendChild(nls);
+  nl.appendChild(document.createTextNode(tot.o >= 0 ? 'Out of pocket, all years' : 'Left over, all years'));
+  nl.appendChild(txt('span', 'val', money(Math.abs(tot.o))));
+  lg.appendChild(nl);
+}
+function patternDefs(c){
+  var d = '';
+  [[1, 45, '--s2'], [2, 135, '--s3'], [3, 90, '--danger']].forEach(function(p){
+    var col = c[p[2]];
+    d += '<pattern id="cp' + p[0] + '" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(' + p[1] + ')">' +
+         '<rect width="7" height="7" fill="' + col + '" opacity="0.3"></rect>' +
+         '<line x1="0" y1="0" x2="0" y2="7" stroke="' + col + '" stroke-width="2.6"></line></pattern>';
+  });
+  return '<defs>' + d + '</defs>';
+}
+function fillOf(varName, patIdx, c){
+  if (state.patterns && patIdx) return 'url(#cp' + patIdx + ')';
+  return c[varName];
+}
+
+function costAt(i){
+  if (!CO || !CO.bars.length) return;
+  i = clamp(i | 0, 0, CO.bars.length - 1);
+  CO.i = i;
+  var b = CO.bars[i], c = CO.c, tip = $('#costTip');
+  tip.textContent = '';
+  tip.appendChild(txt('div', 'th', 'Year ' + b.y + (state.basis === 'real' ? " · today's money" : '')));
+  tipRow(tip, null, b.net >= 0 ? 'Left over' : 'Out of pocket', money(Math.abs(b.net)), 'tot');
+  if (b.up.divs > 0.5) tipRow(tip, c['--s2'], 'Investment income', money(b.up.divs));
+  if (b.up.saved > 0.5) tipRow(tip, c['--s3'], 'Tax saved', money(b.up.saved));
+  if (b.dn.invInt > 0.5) tipRow(tip, c['--s1'], 'Deductible interest', '-' + money(b.dn.invInt));
+  if (b.dn.invPrin > 0.5) tipRow(tip, c['--muted-bar'], 'Loan principal', '-' + money(b.dn.invPrin));
+  if (b.dn.extraTax > 0.5) tipRow(tip, c['--danger'], 'Extra tax', '-' + money(b.dn.extraTax));
+  if (b.row.freed > 0.5) tipRow(tip, null, 'Repayment freed up', money(b.row.freed / defl(b.y)));
+  if (b.row.sold > 0.5) tipRow(tip, null, 'Units sold', money(b.row.sold / defl(b.y)), 'alarm');
+  placeTip(tip, CO, CO.L + CO.band * (i + 0.5), CO.Y(b.net));
+  tip.classList.add('on');
+  tip.setAttribute('aria-hidden', 'false');
+  $('#costLive').textContent = 'Year ' + b.y + ': interest ' + money(b.dn.invInt) + ', income ' +
+    money(b.up.divs) + ', tax saved ' + money(b.up.saved) + ', ' +
+    (b.net >= 0 ? money(b.net) + ' left over' : money(-b.net) + ' out of pocket');
+}
+
+/* ================================================================
+   8. CHART — THE DEBT BEHIND IT
+   Recycling and a home-equity loan want the composition of the debt; a
+   margin loan wants the distance to a call, which is a different question
+   with a different axis, so it gets a different chart in the same frame.
+   ================================================================ */
+var D = null;
+
+function renderDebt(sim){
+  if (state.mode === 'margin') return renderLvr(sim);
+  var wrap = $('#debtWrap'), svg = $('#debtSvg');
+  var W = Math.max(300, Math.round(wrap.clientWidth - 24));
+  var narrow = W < 580;
+  var H = W < 520 ? 236 : 288;
+  var L = narrow ? 54 : 66, R = narrow ? 16 : 96, T = 18, B = 42;
+  var plotW = W - L - R, plotH = H - T - B;
+  var c = cols(['--s2','--s3','--s1','--grid','--hair','--ink','--ink-2','--ink-3','--card','--danger']);
+
+  var years = sim.p.years;
+  var HOME = [dv(sim.p.homeBal - Math.min(sim.p.lumpSum, sim.p.homeBal), 0)];
+  var DED  = [dv(Math.min(sim.p.lumpSum, sim.p.homeBal) + (state.mode === 'equity' ? sim.p.borrow : 0), 0)];
+  var PORT = [DED[0]];
+  sim.rows.forEach(function(r){
+    HOME.push(dv(r.home, r.y)); DED.push(dv(r.inv, r.y)); PORT.push(dv(r.port, r.y));
+  });
+  var hi = 0;
+  for (var i = 0; i < HOME.length; i++) hi = Math.max(hi, HOME[i] + DED[i], PORT[i]);
+  var dom = niceSigned(0, hi, W < 520 ? 3 : 4);
+  var X = function(k){ return L + (k / Math.max(1, years)) * plotW; };
+  var Y = function(v){ return T + plotH - ((clamp(v, dom.lo, dom.hi) - dom.lo) / (dom.hi - dom.lo)) * plotH; };
+  var line = function(a){
+    var d = '';
+    for (var k = 0; k < a.length; k++) d += (k ? 'L' : 'M') + r1(X(k)) + ' ' + r1(Y(a[k]));
+    return d;
+  };
+  var area = function(hiA, loA){
+    var d = '', k;
+    for (k = 0; k < hiA.length; k++) d += (k ? 'L' : 'M') + r1(X(k)) + ' ' + r1(Y(hiA[k]));
+    for (k = hiA.length - 1; k >= 0; k--) d += 'L' + r1(X(k)) + ' ' + r1(Y(loA ? loA[k] : 0));
+    return d + 'Z';
+  };
+
+  var s = [];
+  s.push(patternDefs(c));
+  gridAndY(s, c, dom.ticks, Y, L, plotW);
+  xTicks(years).forEach(function(yr){
+    s.push('<text x="' + r1(X(yr)) + '" y="' + (T + plotH + 18) + '" text-anchor="middle" font-size="10.5" fill="' +
+           c['--ink-3'] + '" style="font-variant-numeric:tabular-nums">' + (yr === 0 ? 'now' : yr) + '</text>');
+  });
+  s.push('<text x="' + (L + plotW / 2) + '" y="' + (T + plotH + 35) + '" text-anchor="middle" font-size="10" fill="' +
+         c['--ink-3'] + '">years</text>');
+
+  var TOT = DED.map(function(v, k){ return v + HOME[k]; });
+  s.push('<path d="' + area(DED, null) + '" fill="' + fillOf('--s2', 1, c) + '" fill-opacity="' + (state.patterns ? 1 : 0.6) + '"></path>');
+  s.push('<path d="' + area(TOT, DED) + '" fill="' + fillOf('--s3', 2, c) + '" fill-opacity="' + (state.patterns ? 1 : 0.6) + '"></path>');
+  s.push('<path d="' + line(DED) + '" fill="none" stroke="' + c['--card'] + '" stroke-width="2"></path>');
+  s.push('<path d="' + line(PORT) + '" fill="none" stroke="' + c['--card'] + '" stroke-width="5" opacity="0.8"></path>');
+  s.push('<path d="' + line(PORT) + '" fill="none" stroke="' + c['--s1'] +
+         '" stroke-width="2.2" stroke-dasharray="5 3.5" stroke-linecap="round"></path>');
+
+  if (!narrow){
+    var lx = L + plotW + 9, placed = [];
+    var put = function(y, t2, fill, w) {
+      y = clamp(y, T + 8, T + plotH);
+      for (var k = 0; k < placed.length; k++) if (Math.abs(placed[k] - y) < 13) return;
+      placed.push(y);
+      s.push('<text x="' + lx + '" y="' + r1(y) + '" font-size="10.5" font-weight="' + (w || 400) +
+             '" fill="' + fill + '">' + esc(t2) + '</text>');
+    };
+    var n = DED.length - 1;
+    put(Y(PORT[n]) + 3, 'Portfolio', c['--s1'], 600);
+    if (Y(0) - Y(DED[n]) >= 16) put((Y(0) + Y(DED[n])) / 2 + 3, 'Deductible', c['--ink-2'], 600);
+    if (Y(DED[n]) - Y(TOT[n]) >= 16) put((Y(DED[n]) + Y(TOT[n])) / 2 + 3, 'Home loan', c['--ink-3']);
+  }
+
+  s.push('<g id="dHover"></g>');
+  s.push('<rect x="' + L + '" y="' + T + '" width="' + plotW + '" height="' + plotH +
+         '" fill="transparent" pointer-events="all" id="dHit"></rect>');
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  svg.setAttribute('aria-label', 'Stacked area chart of the debt, split into deductible and non-deductible, with the portfolio as a dashed line.');
+  svg.innerHTML = s.join('');
+
+  D = { kind:'stack', svg:svg, wrap:wrap, HOME:HOME, DED:DED, PORT:PORT, TOT:TOT, rows:sim.rows,
+        L:L, T:T, plotW:plotW, plotH:plotH, W:W, H:H, dom:dom, years:years, c:c, i:-1, X:X, Y:Y };
+
+  var lastRow = sim.rows[sim.rows.length - 1];
+  $('#debtH').textContent = state.mode === 'recycle' ? 'Good debt, bad debt' : 'The debt behind it';
+  $('#debtSub').textContent = state.mode === 'recycle'
+    ? 'The balance barely moves; what changes is how much of it is working for you. ' +
+      pcOf(lastRow.dedShare, 0) + ' of the debt is deductible by year ' + lastRow.y + '.'
+    : 'The loan against the portfolio it bought' + (state.basis === 'real' ? ", in today's money" : '') + '.';
+  $('#debtDesc').textContent = 'By year ' + lastRow.y + ' the deductible loan is ' + money(dv(lastRow.inv, lastRow.y)) +
+    ', the home loan ' + money(dv(lastRow.home, lastRow.y)) + ', and the portfolio ' +
+    money(dv(lastRow.port, lastRow.y)) + '.';
+
+  var lg = $('#debtLegend');
+  lg.textContent = '';
+  var add = function(varName, name, val, patIdx, isLine){
+    var el = document.createElement('span');
+    el.className = 'lg';
+    var sw = document.createElement('span');
+    sw.className = isLine ? 'swl' : 'sw';
+    sw.style.background = state.patterns && patIdx && !isLine
+      ? 'repeating-linear-gradient(' + (patIdx === 1 ? 45 : 135) + 'deg,' + cssv(varName) + ' 0 2px,transparent 2px 5px),' + cssv(varName) + '55'
+      : cssv(varName);
+    el.appendChild(sw);
+    el.appendChild(document.createTextNode(name));
+    el.appendChild(txt('span', 'val', money(val)));
+    lg.appendChild(el);
+  };
+  add('--s2', 'Deductible debt', dv(lastRow.inv, lastRow.y), 1);
+  if (sim.p.homeBal > 0) add('--s3', 'Non-deductible (home loan)', dv(lastRow.home, lastRow.y), 2);
+  add('--s1', 'Portfolio', dv(lastRow.port, lastRow.y), 0, true);
+}
+
+function renderLvr(sim){
+  var wrap = $('#debtWrap'), svg = $('#debtSvg');
+  var W = Math.max(300, Math.round(wrap.clientWidth - 24));
+  var narrow = W < 580;
+  var H = W < 520 ? 236 : 288;
+  var L = narrow ? 46 : 56, R = narrow ? 16 : 92, T = 18, B = 42;
+  var plotW = W - L - R, plotH = H - T - B;
+  var c = cols(['--accent','--grid','--hair','--ink','--ink-2','--ink-3','--card','--danger','--warn','--good']);
+
+  var years = sim.p.years;
+  var LV = [sim.p.lvrTarget * 100];
+  sim.rows.forEach(function(r){ LV.push(r.lvr * 100); });
+  var callLine = (sim.p.maxLvr + sim.p.buffer) * 100, maxLine = sim.p.maxLvr * 100;
+  var hi = Math.max(callLine + 8, Math.max.apply(null, LV) + 6);
+  var dom = niceSigned(0, Math.min(200, hi), 4);
+  var X = function(k){ return L + (k / Math.max(1, years)) * plotW; };
+  var Y = function(v){ return T + plotH - ((clamp(v, dom.lo, dom.hi) - dom.lo) / (dom.hi - dom.lo)) * plotH; };
+
+  var s = [];
+  gridAndY(s, c, dom.ticks, Y, L, plotW, function(v){ return Math.round(v) + '%'; });
+
+  /* the zone between the lender's maximum and the call line is where you are
+     over-geared but not yet forced to act */
+  s.push('<rect x="' + L + '" y="' + r1(Y(callLine)) + '" width="' + plotW + '" height="' +
+         r1(Math.max(0, Y(maxLine) - Y(callLine))) + '" fill="' + c['--warn'] + '" opacity="0.13"></rect>');
+  s.push('<rect x="' + L + '" y="' + T + '" width="' + plotW + '" height="' + r1(Math.max(0, Y(callLine) - T)) +
+         '" fill="' + c['--danger'] + '" opacity="0.10"></rect>');
+  s.push('<line x1="' + L + '" y1="' + r1(Y(callLine)) + '" x2="' + (L + plotW) + '" y2="' + r1(Y(callLine)) +
+         '" stroke="' + c['--danger'] + '" stroke-width="1.6" stroke-dasharray="5 3"></line>');
+  s.push('<line x1="' + L + '" y1="' + r1(Y(maxLine)) + '" x2="' + (L + plotW) + '" y2="' + r1(Y(maxLine)) +
+         '" stroke="' + c['--warn'] + '" stroke-width="1.2" stroke-dasharray="2 3"></line>');
+
+  xTicks(years).forEach(function(yr){
+    s.push('<text x="' + r1(X(yr)) + '" y="' + (T + plotH + 18) + '" text-anchor="middle" font-size="10.5" fill="' +
+           c['--ink-3'] + '" style="font-variant-numeric:tabular-nums">' + (yr === 0 ? 'now' : yr) + '</text>');
+  });
+  s.push('<text x="' + (L + plotW / 2) + '" y="' + (T + plotH + 35) + '" text-anchor="middle" font-size="10" fill="' +
+         c['--ink-3'] + '">years</text>');
+
+  var d = '';
+  for (var i = 0; i < LV.length; i++) d += (i ? 'L' : 'M') + r1(X(i)) + ' ' + r1(Y(LV[i]));
+  s.push('<path d="' + d + '" fill="none" stroke="' + c['--card'] + '" stroke-width="5" opacity="0.8"></path>');
+  s.push('<path d="' + d + '" fill="none" stroke="' + c['--accent'] + '" stroke-width="2.4" stroke-linejoin="round"></path>');
+
+  sim.rows.forEach(function(r){
+    if (!r.call) return;
+    var x = r1(X(r.y));
+    s.push('<line x1="' + x + '" y1="' + T + '" x2="' + x + '" y2="' + (T + plotH) + '" stroke="' +
+           c['--danger'] + '" stroke-width="1" stroke-dasharray="2 2" opacity="0.8"></line>');
+    s.push('<path d="M' + x + ' ' + (T + 2) + ' l4.6 8 l-9.2 0 Z" fill="' + c['--danger'] + '"></path>');
+  });
+
+  if (!narrow){
+    var lx = L + plotW + 8;
+    s.push('<text x="' + lx + '" y="' + r1(clamp(Y(callLine) + 3, T + 10, T + plotH)) + '" font-size="10.5" font-weight="700" fill="' +
+           c['--danger'] + '">Call at ' + pc(callLine, 0) + '</text>');
+    s.push('<text x="' + lx + '" y="' + r1(clamp(Y(LV[LV.length-1]) + 3, T + 10, T + plotH)) + '" font-size="11" font-weight="700" fill="' +
+           c['--ink'] + '">' + pc(LV[LV.length-1], 0) + '</text>');
+  }
+
+  s.push('<g id="dHover"></g>');
+  s.push('<rect x="' + L + '" y="' + T + '" width="' + plotW + '" height="' + plotH +
+         '" fill="transparent" pointer-events="all" id="dHit"></rect>');
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  svg.setAttribute('aria-label', 'Loan to value ratio over time against the margin call line at ' + pc(callLine, 0) + '.');
+  svg.innerHTML = s.join('');
+
+  D = { kind:'lvr', svg:svg, wrap:wrap, LV:LV, rows:sim.rows, callLine:callLine, maxLine:maxLine,
+        L:L, T:T, plotW:plotW, plotH:plotH, W:W, H:H, dom:dom, years:years, c:c, i:-1, X:X, Y:Y };
+
+  $('#debtH').textContent = 'How close to a margin call';
+  $('#debtSub').textContent = 'The loan as a share of the portfolio. Cross ' + pc(callLine, 0) +
+    ' — the lender’s ' + pc(maxLine, 0) + ' maximum plus a ' + pc(sim.p.buffer * 100, 0) +
+    ' buffer — and the loan is called.';
+  $('#debtDesc').textContent = 'The gearing ratio starts at ' + pc(LV[0], 0) + ' and ends at ' +
+    pc(LV[LV.length-1], 0) + ', against a call line of ' + pc(callLine, 0) + '. ' +
+    (sim.calls.length ? sim.calls.length + ' call' + (sim.calls.length > 1 ? 's' : '') + ' in this run.'
+                      : 'No call in this run.');
+
+  var lg = $('#debtLegend');
+  lg.textContent = '';
+  [['--accent', 'Your gearing', pc(LV[LV.length-1], 0), true],
+   ['--danger', 'Call line', pc(callLine, 0), true],
+   ['--warn', 'Lender’s maximum', pc(maxLine, 0), true]
+  ].forEach(function(e){
+    var el = document.createElement('span');
+    el.className = 'lg';
+    var sw = document.createElement('span');
+    sw.className = 'swl';
+    sw.style.background = cssv(e[0]);
+    el.appendChild(sw);
+    el.appendChild(document.createTextNode(e[1]));
+    el.appendChild(txt('span', 'val', e[2]));
+    lg.appendChild(el);
+  });
+}
+
+function debtAt(i){
+  if (!D) return;
+  var n = D.kind === 'lvr' ? D.LV.length : D.DED.length;
+  i = clamp(i | 0, 0, n - 1);
+  D.i = i;
+  var c = D.c, h = [], x = D.X(i), row = i > 0 ? D.rows[i - 1] : null;
+  var yAt;
+  if (D.kind === 'lvr'){
+    yAt = D.Y(D.LV[i]);
+    h.push('<circle cx="' + r1(x) + '" cy="' + r1(yAt) + '" r="4.6" fill="' + c['--accent'] +
+           '" stroke="' + c['--card'] + '" stroke-width="2"></circle>');
+  } else {
+    yAt = D.Y(D.TOT[i]);
+    [[D.DED[i], '--s2'], [D.TOT[i], '--s3'], [D.PORT[i], '--s1']].forEach(function(p){
+      h.push('<circle cx="' + r1(x) + '" cy="' + r1(D.Y(p[0])) + '" r="4" fill="' + c[p[1]] +
+             '" stroke="' + c['--card'] + '" stroke-width="2"></circle>');
+    });
+  }
+  h.unshift('<line x1="' + r1(x) + '" y1="' + D.T + '" x2="' + r1(x) + '" y2="' + (D.T + D.plotH) +
+            '" stroke="' + c['--ink-3'] + '" stroke-width="1" opacity="0.65"></line>');
+  var layer = D.svg.querySelector('#dHover');
+  if (layer) layer.innerHTML = h.join('');
+
+  var tip = $('#debtTip');
+  tip.textContent = '';
+  tip.appendChild(txt('div', 'th', (i === 0 ? 'Today' : 'Year ' + i) +
+    (state.basis === 'real' && D.kind !== 'lvr' ? " · today's money" : '')));
+  if (D.kind === 'lvr'){
+    tipRow(tip, null, 'Gearing', pc(D.LV[i], 1), 'tot');
+    tipRow(tip, c['--danger'], 'Call line', pc(D.callLine, 0));
+    if (row){
+      tipRow(tip, null, 'Loan', money(dv(row.inv, row.y)));
+      tipRow(tip, null, 'Portfolio', money(dv(row.port, row.y)));
+      if (row.call) tipRow(tip, null, 'Called — sold', money(dv(row.callSold, row.y)), 'alarm');
+    }
+  } else {
+    tipRow(tip, null, 'Total debt', money(D.TOT[i]), 'tot');
+    tipRow(tip, c['--s2'], 'Deductible', money(D.DED[i]));
+    if (D.HOME[i] > 0.5) tipRow(tip, c['--s3'], 'Home loan', money(D.HOME[i]));
+    tipRow(tip, c['--s1'], 'Portfolio', money(D.PORT[i]));
+    if (row) tipRow(tip, null, 'Deductible share', pcOf(row.dedShare, 0));
+    if (row && row.recycled > 0.5) tipRow(tip, null, 'Recycled this year', money(dv(row.recycled, row.y)));
+  }
+  placeTip(tip, D, x, yAt);
+  tip.classList.add('on');
+  tip.setAttribute('aria-hidden', 'false');
+  $('#debtLive').textContent = D.kind === 'lvr'
+    ? 'Year ' + i + ': gearing ' + pc(D.LV[i], 1) + ' against a call line of ' + pc(D.callLine, 0)
+    : 'Year ' + i + ': deductible ' + money(D.DED[i]) + ', home loan ' + money(D.HOME[i]) +
+      ', portfolio ' + money(D.PORT[i]);
+}
+
+/* ================================================================
+   9. CHART — IF THE RETURN WERE DIFFERENT
+   The difference the borrowing made, at five returns, with the break-even
+   marked. Bars go below the line where the borrowing cost you money.
+   ================================================================ */
+var S = null;
+
+function barPath(x, y, w, h, rad, down){
+  rad = Math.min(rad, w / 2, Math.max(0, h));
+  if (down){
+    return 'M' + r1(x) + ' ' + r1(y) + 'V' + r1(y + h - rad) +
+           'Q' + r1(x) + ' ' + r1(y + h) + ' ' + r1(x + rad) + ' ' + r1(y + h) +
+           'H' + r1(x + w - rad) + 'Q' + r1(x + w) + ' ' + r1(y + h) + ' ' + r1(x + w) + ' ' + r1(y + h - rad) +
+           'V' + r1(y) + 'Z';
+  }
+  return 'M' + r1(x) + ' ' + r1(y + h) + 'V' + r1(y + rad) +
+         'Q' + r1(x) + ' ' + r1(y) + ' ' + r1(x + rad) + ' ' + r1(y) +
+         'H' + r1(x + w - rad) + 'Q' + r1(x + w) + ' ' + r1(y) + ' ' + r1(x + w) + ' ' + r1(y + rad) +
+         'V' + r1(y + h) + 'Z';
+}
+
+function renderSens(sim, be){
+  var wrap = $('#sensWrap'), svg = $('#sensSvg');
+  var W = Math.max(300, Math.round(wrap.clientWidth - 24));
+  var narrow = W < 580;
+  var H = W < 520 ? 244 : 280;
+  var L = narrow ? 54 : 66, R = 16, T = 28, B = 52;
+  var plotW = W - L - R, plotH = H - T - B;
+  var c = cols(['--accent','--good','--danger','--muted-bar','--grid','--hair','--ink','--ink-2','--ink-3','--card']);
+
+  /* Your own return, exactly as you typed it, and 2 and 4 points either side.
+     The current bar is the one built from the zero offset rather than picked
+     out afterwards by comparing floats, so a return of 7.25 still highlights.
+     Zero goes first so a return near either end, where the clamp collapses two
+     candidates into one, keeps its flag. */
+  var own = state.ret, offs = [0, -4, -2, 2, 4], seen = {}, rates = [];
+  offs.forEach(function(o){
+    var r = o === 0 ? own : clamp(own + o, 0, 30);
+    var key = r.toFixed(4);
+    if (!seen[key]){ seen[key] = 1; rates.push({ rate: r, isCur: o === 0 }); }
+  });
+  rates.sort(function(a, b){ return a.rate - b.rate; });
+
+  var lo = 0, hi = 0;
+  var bars = rates.map(function(rr){
+    var sm = rr.isCur ? sim : project(Object.assign(params(state), { ret: rr.rate / 100 }));
+    var v = dv(sm.benefit, sim.p.years);
+    if (v > hi) hi = v;
+    if (v < lo) lo = v;
+    return { rate: Math.round(rr.rate * 100) / 100, v: v, isCur: rr.isCur,
+             lev: dv(sm.exitLev, sim.p.years), base: dv(sm.exitBase, sim.p.years) };
+  });
+  var dom = niceSigned(lo, hi, W < 520 ? 3 : 4);
+  var Y = function(v){ return T + plotH - ((clamp(v, dom.lo, dom.hi) - dom.lo) / (dom.hi - dom.lo)) * plotH; };
+  var band = plotW / bars.length;
+  var bw = Math.min(30, band * 0.5);
+  var zeroY = Y(0);
+
+  var s = [];
+  gridAndY(s, c, dom.ticks, Y, L, plotW);
+
+  bars.forEach(function(b, k){
+    var cx = L + band * (k + 0.5), x = cx - bw / 2;
+    var down = b.v < 0;
+    var y = down ? zeroY : Y(b.v), h = Math.abs(Y(b.v) - zeroY);
+    var fill = b.isCur ? (down ? c['--danger'] : c['--accent']) : c['--muted-bar'];
+    s.push('<path d="' + barPath(x, y, bw, Math.max(1, h), 4, down) + '" fill="' + fill +
+           '" opacity="' + (b.isCur ? 1 : 0.8) + '"></path>');
+    var ly = down ? y + h + 13 : y - 8;
+    s.push('<text x="' + r1(cx) + '" y="' + r1(clamp(ly, T + 10, T + plotH + 13)) + '" text-anchor="middle" font-size="11" font-weight="' +
+           (b.isCur ? 700 : 500) + '" fill="' + (b.isCur ? c['--ink'] : c['--ink-2']) + '">' +
+           esc((b.v >= 0 ? '+' : '−') + moneyC(Math.abs(b.v))) + '</text>');
+    s.push('<text x="' + r1(cx) + '" y="' + (T + plotH + 20) + '" text-anchor="middle" font-size="11" font-weight="' +
+           (b.isCur ? 700 : 400) + '" fill="' + (b.isCur ? c['--ink'] : c['--ink-3']) +
+           '" style="font-variant-numeric:tabular-nums">' + esc(b.rate + '%') + '</text>');
+    if (b.isCur){
+      s.push('<text x="' + r1(cx) + '" y="' + (T + plotH + 34) + '" text-anchor="middle" font-size="10" fill="' +
+             c['--accent'] + '" font-weight="700">your return</text>');
+    }
+    s.push('<rect x="' + r1(L + band * k) + '" y="' + T + '" width="' + r1(band) + '" height="' + plotH +
+           '" fill="transparent" pointer-events="all" class="sHit" data-i="' + k + '"></rect>');
+  });
+
+  /* The break-even, drawn where it actually falls on the return axis — the one
+     number that decides whether any of this was worth doing. */
+  var beTxt = '';
+  if (be && !be.below && !be.above){
+    var brate = be.rate * 100;
+    var first = bars[0].rate, last = bars[bars.length - 1].rate;
+    if (brate >= first && brate <= last && bars.length > 1){
+      var frac = (brate - first) / (last - first);
+      var bx = L + band * 0.5 + frac * band * (bars.length - 1);
+      s.push('<line x1="' + r1(bx) + '" y1="' + (T - 6) + '" x2="' + r1(bx) + '" y2="' + (T + plotH) +
+             '" stroke="' + c['--ink'] + '" stroke-width="1.4" stroke-dasharray="4 3"></line>');
+      var anchor = frac > 0.7 ? 'end' : 'start';
+      s.push('<text x="' + r1(bx + (anchor === 'end' ? -6 : 6)) + '" y="' + (T - 10) +
+             '" text-anchor="' + anchor + '" font-size="10.5" font-weight="700" fill="' + c['--ink'] +
+             '" stroke="' + c['--card'] + '" stroke-width="3.5" paint-order="stroke" stroke-linejoin="round">' +
+             esc('break-even ' + pc(brate, 2)) + '</text>');
+    }
+    beTxt = 'break-even ' + pc(brate, 2);
+  }
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  svg.setAttribute('aria-label', 'What the borrowing was worth at five different returns. Use the left and right arrow keys to step through it.');
+  svg.innerHTML = s.join('');
+
+  S = { svg:svg, wrap:wrap, bars:bars, L:L, T:T, plotW:plotW, plotH:plotH, W:W, H:H,
+        band:band, dom:dom, c:c, Y:Y, zeroY:zeroY, i:-1 };
+
+  $('#sensDesc').textContent = 'Column chart of what the borrowing was worth at ' +
+    bars.map(function(b){ return b.rate + '% (' + money(b.v) + ')'; }).join(', ') +
+    (beTxt ? '. The break-even return is ' + pc(be.rate * 100, 2) + '.' : '.');
+  $('#sensSub').textContent = 'Everything else held still — only the return changes. Above the line ' +
+    modeWord() + ' left you ahead; below it, behind.' + (beTxt ? ' Your ' + pc(state.ret, 2) + ' is highlighted.' : '');
+}
+
+function sensAt(k){
+  if (!S) return;
+  k = clamp(k | 0, 0, S.bars.length - 1);
+  S.i = k;
+  var b = S.bars[k], tip = $('#sensTip');
+  tip.textContent = '';
+  tip.appendChild(txt('div', 'th', 'A ' + b.rate + '% return' + (b.isCur ? ' — yours' : '')));
+  tipRow(tip, null, b.v >= 0 ? 'Better off by' : 'Worse off by', money(Math.abs(b.v)), 'tot');
+  tipRow(tip, S.c['--accent'], planWord(), money(b.lev));
+  tipRow(tip, S.c['--ink-3'], 'Without it', money(b.base));
+  placeTip(tip, S, S.L + S.band * (k + 0.5), b.v >= 0 ? S.Y(b.v) : S.zeroY);
+  tip.classList.add('on');
+  tip.setAttribute('aria-hidden', 'false');
+  $('#sensLive').textContent = 'At ' + b.rate + '%, ' + modeWord() + ' leaves you ' +
+    (b.v >= 0 ? money(b.v) + ' ahead' : money(-b.v) + ' behind');
+}
+
+/* ================================================================
+   10. HERO, TILES, RISK
+   ================================================================ */
+function inkOn(hex){
+  var h = String(hex).replace('#', '');
+  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+  if (h.length < 6) return '#ffffff';
+  var f = function(cc){ cc /= 255; return cc <= 0.03928 ? cc / 12.92 : Math.pow((cc + 0.055) / 1.055, 2.4); };
+  var lum = 0.2126 * f(parseInt(h.slice(0, 2), 16)) + 0.7152 * f(parseInt(h.slice(2, 4), 16)) + 0.0722 * f(parseInt(h.slice(4, 6), 16));
+  return lum > 0.42 ? '#14181c' : '#ffffff';
+}
+
+/* Nothing borrowed means the two ledgers are the same ledger. Every figure
+   that describes the difference between them is then meaningless rather than
+   bad, and saying "behind in 100% of markets" about a scenario with no
+   borrowing in it would be simply wrong. */
+function isGeared(sim){
+  return sim.rows.some(function(r){ return r.inv > 0.5; });
+}
+function renderHero(sim, mc, be){
+  var y = sim.p.years;
+  var lev = dv(sim.exitLev, y), base = dv(sim.exitBase, y), diff = lev - base;
+  var real = state.basis === 'real';
+  var geared = isGeared(sim);
+
+  $('#heroLabel').textContent = 'What ' + modeWord() + ' was worth after ' + y +
+    (y === 1 ? ' year' : ' years') + (real ? ", in today's money" : '');
+  $('#heroValue').textContent = (diff >= 0 ? '' : '−') + money(Math.abs(diff)).replace('-', '');
+  $('#heroValue').className = 'hero-value' + (diff < 0 ? ' neg' : '');
+
+  var note = [];
+  if (!geared){
+    note.push('Nothing is borrowed in this scenario, so it <b>is</b> the plain alternative');
+    note.push('both sides end at <b>' + esc(money(lev)) + '</b>');
+    note.push(nothingBorrowedWhy());
+  } else {
+    note.push(planWord() + ' leaves you with <b>' + esc(money(lev)) + '</b>');
+    note.push(plainWord() + ' leaves <b>' + esc(money(base)) + '</b>');
+    if (base > 0) note.push('<b>' + pc((lev / base - 1) * 100, 1) + '</b> difference');
+  }
+  $('#heroNote').innerHTML = note.join(' &middot; ');
+
+  /* One bar: what you would have had anyway, and what the borrowing added to
+     it — or, hatched, what it took away. */
+  var barW = Math.max(120, $('#compBar').clientWidth || 480);
+  var segs = diff >= 0
+    ? [{ cls:'s1', v: Math.max(0, base), name: 'Without borrowing', css:'--s1' },
+       { cls:'gain', v: diff, name: 'What the borrowing added', css:'--good' }]
+    : [{ cls:'s1', v: Math.max(0, lev), name: planWord(), css:'--s1' },
+       { cls:'loss', v: -diff, name: 'What the borrowing cost', css:'--danger' }];
+  var sum = segs.reduce(function(a, sg){ return a + Math.max(0, sg.v); }, 0) || 1;
+  /* a clipped label is worse than no label, and a bar where only one segment
+     is named reads as an accident — so decide once, for both */
+  var namesFit = segs.every(function(sg){
+    return (Math.max(0, sg.v) / sum) * barW > (sg.name.length + 5) * 6.5 + 22;
+  });
+  var bar = $('#compBar');
+  bar.textContent = '';
+  segs.forEach(function(sg){
+    var share = Math.max(0, sg.v) / sum;
+    var el = document.createElement('div');
+    el.className = 'compseg ' + sg.cls;
+    el.style.flex = share + ' 1 0';
+    el.title = sg.name + ' — ' + money(sg.v) + ' (' + Math.round(share * 100) + '%)';
+    var px = share * barW, label = namesFit ? sg.name + '  ' + Math.round(share * 100) + '%'
+                                            : Math.round(share * 100) + '%';
+    if (px > label.length * 6.5 + 16){
+      el.textContent = label;
+      el.style.color = sg.cls === 'loss' ? cssv('--ink') : inkOn(cssv(sg.css));
+    }
+    bar.appendChild(el);
+  });
+  bar.setAttribute('aria-label', segs.map(function(sg){
+    return Math.round(Math.max(0, sg.v) / sum * 100) + '% ' + sg.name;
+  }).join(', '));
+  $('#compCapL').textContent = diff >= 0
+    ? 'Of the ' + money(lev) + ', the borrowing accounts for ' + money(diff)
+    : 'The borrowing cost you ' + money(-diff) + ' of the ' + money(base) + ' you would have had';
+  $('#compCapR').textContent = !geared ? 'Nothing borrowed — nothing to compare'
+    : be && be.below ? 'Ahead at any plausible return'
+    : be && be.above ? 'Behind at every return up to 40%'
+    : be ? 'Needs better than ' + pc(be.rate * 100, 2) + ' a year' : '';
+
+  /* ---- tiles ---- */
+  var totInt = 0, totSaved = 0, totDiv = 0, peakDebt = 0;
+  sim.rows.forEach(function(r){
+    totInt += r.invInt; totSaved += r.saved; totDiv += r.divs;
+    if (r.debt > peakDebt) peakDebt = r.debt;
+  });
+  var last = sim.rows[sim.rows.length - 1];
+  var k = real ? defl(y) : 1;
+  var tiles = [];
+
+  tiles.push(!geared
+    ? { k:'Break-even return', v:'n/a', m:'Nothing is borrowed, so there is nothing to break even on' }
+    : be && be.below
+    ? { k:'Break-even return', v:'Any', m:'The borrowing pays even in a poor market', pos:true }
+    : be && be.above
+    ? { k:'Break-even return', v:'None', m:'Nothing up to 40% a year makes this pay', neg:true }
+    : { k:'Break-even return', v: pc(be.rate * 100, 2),
+        m:'You need better than this. You assumed ' + pc(state.ret, 2) + '.',
+        neg: be.rate > state.ret / 100, pos: be.rate <= state.ret / 100 });
+
+  tiles.push(!geared
+    ? { k:'Ahead in', dot:'acc', v:'—', m:'Identical to not borrowing in every market' }
+    : mc.tiedRate > 0.5
+    ? { k:'Ahead in', dot:'acc', v:'—',
+        m:'No measurable difference in ' + pcOf(mc.tiedRate, 0) + ' of markets' }
+    : { k:'Ahead in', dot:'acc', v: pcOf(mc.aheadRate, 0),
+        m:'of 1,000 simulated markets at ' + pc(state.vol, 1) + ' volatility',
+        neg: mc.behindRate >= 0.5, pos: mc.aheadRate >= 0.75 });
+
+  tiles.push({ k:'Deductible interest paid', dot:'s1', v: money(totInt / k),
+    m: pc(loanRate(), 2) + ' on up to ' + moneyC(peakDebt / k) + ' of debt' });
+
+  tiles.push({ k: totSaved >= 0 ? 'Tax saved' : 'Extra tax paid', dot:'s3',
+    v: money(Math.abs(totSaved) / k),
+    m: totSaved >= 0
+      ? 'The deduction at your marginal rate, over ' + y + ' years'
+      : 'The income outgrew the deduction and pushed your tax up',
+    neg: totSaved < 0 });
+
+  tiles.push({ k:'Investment income', dot:'s2', v: money(totDiv / k),
+    m: pc(state.divYield, 2) + ' yield, ' + pc(state.franked, 0) + ' franked' });
+
+  if (state.mode === 'margin'){
+    tiles.push({ k:'Margin call risk', dot:'dgr', v: pcOf(mc.callRate, 1),
+      m:'of markets bring at least one call. Worst gearing typically ' +
+        pcOf(mc.medianWorstLvr, 0) + ', ' + pcOf(mc.p95WorstLvr, 0) + ' in a bad one.',
+      neg: mc.callRate > 0.02 });
+  } else if (state.mode === 'recycle'){
+    tiles.push({ k:'Debt made deductible', dot:'s2', v: pcOf(last.dedShare, 0),
+      m: money(dv(last.inv, y)) + ' of ' + money(dv(last.debt, y)) + ' by year ' + y +
+         (state.recyclePrin ? '. The balance never falls.' : '.') });
+  } else {
+    tiles.push({ k:'Loan still owing', dot:'s2', v: money(dv(last.inv, y)),
+      m: state.io ? 'Interest only — the principal was never repaid'
+                  : 'Repaid over ' + state.loanTerm + ' years' });
+  }
+
+  var host = $('#tiles');
+  host.textContent = '';
+  tiles.forEach(function(ti){
+    var el = document.createElement('div');
+    el.className = 'panel tile';
+    var kk = document.createElement('div');
+    kk.className = 'k';
+    if (ti.dot){ var dd = document.createElement('span'); dd.className = 'dot ' + ti.dot; kk.appendChild(dd); }
+    kk.appendChild(document.createTextNode(ti.k));
+    el.appendChild(kk);
+    el.appendChild(txt('div', 'v' + (ti.neg ? ' neg' : ti.pos ? ' pos' : ''), ti.v));
+    el.appendChild(txt('div', 'm', ti.m));
+    host.appendChild(el);
+  });
+
+  /* ---- the warning chip ---- */
+  var shortfall = sim.rows.reduce(function(a, r){ return a + r.need; }, 0);
+  var warn = null;
+  if (!geared) warn = null;
+  else if (sim.calls.length) warn = sim.calls.length + ' margin call' + (sim.calls.length > 1 ? 's' : '') +
+    ' even on the steady return — first in year ' + sim.calls[0].y;
+  else if (sim.unfunded > 1) warn = money(sim.unfunded / k) + ' of interest could be neither funded nor sold for';
+  else if (shortfall > 1) warn = money(shortfall / k) + ' of units had to be sold to pay the interest';
+  else if (mc.tiedRate > 0.5) warn = 'The borrowing makes no measurable difference here';
+  else if (mc.behindRate >= 0.5) warn = 'Behind in ' + pcOf(mc.behindRate, 0) + ' of simulated markets';
+  else if (state.mode === 'margin' && mc.callRate > 0.05) warn = pcOf(mc.callRate, 0) + ' of markets bring a margin call';
+  $('#warnChip').classList.toggle('on', !!warn);
+  $('#warnChip').classList.toggle('alarm', !!warn);
+  $('#warnTxt').textContent = warn || '';
+}
+
+function nothingBorrowedWhy(){
+  if (state.mode === 'recycle') return state.homeBal <= 0
+    ? 'there is no home loan to convert'
+    : 'nothing is being paid off the loan and drawn again';
+  if (state.mode === 'equity') return 'the amount borrowed is nil';
+  return 'the starting gearing is nil';
+}
+function renderRisk(sim, mc){
+  var y = sim.p.years, k = state.basis === 'real' ? defl(y) : 1;
+  var ahead = mc.aheadRate;
+  if (!isGeared(sim)){
+    $('#riskSub').textContent = 'Nothing is borrowed in this scenario — ' + nothingBorrowedWhy() +
+      ' — so there is no gearing to carry a risk. Give the strategy something to work with and this fills in.';
+    $('#riskGrid').textContent = '';
+    $('#riskMeter').textContent = '';
+    $('#riskMeter').removeAttribute('aria-label');
+    $('#meterL').textContent = '';
+    $('#meterR').textContent = '';
+    $('#riskNote').className = 'note';
+    $('#riskNote').innerHTML = 'With no borrowing the projection runs the same plan twice and the two ' +
+      'lines sit on top of each other. That is worth seeing once: it is the baseline every geared ' +
+      'scenario on this page is measured against.';
+    return;
+  }
+  $('#riskSub').textContent = state.vol > 0
+    ? 'A thousand runs of the same plan, each with a fresh return every year drawn around your ' +
+      pc(state.ret, 2) + ' at ' + pc(state.vol, 1) + ' volatility. Both sides see the same market in every run.'
+    : 'Volatility is set to zero, so there is only one market and only one outcome. Raise it to see how much of this rests on the average showing up.';
+
+  var items = [
+    { v: pcOf(ahead, 0), n:'of markets left you ahead of not borrowing',
+      cls: ahead >= 0.75 ? 'ok' : mc.behindRate >= 0.5 ? 'bad' : '' },
+    { v: money(mc.benefit.p50 / k), n:'the typical difference it made', cls: mc.benefit.p50 >= 0 ? 'ok' : 'bad' },
+    { v: money(mc.benefit.p10 / k), n:'a bad market — worse than this one in ten', cls: mc.benefit.p10 >= 0 ? 'ok' : 'bad' },
+    { v: money(mc.benefit.worst / k), n:'the worst of the thousand', cls: mc.benefit.worst >= 0 ? 'ok' : 'bad' }
+  ];
+  if (state.mode === 'margin'){
+    items.push({ v: pcOf(mc.callRate, 1), n:'brought at least one margin call', cls: mc.callRate > 0.02 ? 'bad' : 'ok' });
+  }
+  items.push({ v: pcOf(mc.underRate, 0), n:'had the loan worth more than the shares it bought, at some point',
+               cls: mc.underRate > 0.5 ? 'bad' : '' });
+  if (mc.tiedRate > 0.005){
+    items.push({ v: pcOf(mc.tiedRate, 0), n:'came out within a dollar either way' });
+  }
+
+  var grid = $('#riskGrid');
+  grid.textContent = '';
+  items.forEach(function(it){
+    var el = document.createElement('div');
+    el.className = 'rk';
+    el.appendChild(txt('div', 'rv ' + (it.cls || ''), it.v));
+    el.appendChild(txt('div', 'rn', it.n));
+    grid.appendChild(el);
+  });
+
+  /* Three segments, because a tie is neither of the other two. */
+  var m = $('#riskMeter');
+  m.textContent = '';
+  [['ok', ahead], ['tie', mc.tiedRate], ['bad', mc.behindRate]].forEach(function(seg){
+    if (seg[1] <= 0) return;
+    var el = document.createElement('i');
+    el.className = seg[0];
+    el.style.width = (seg[1] * 100) + '%';
+    m.appendChild(el);
+  });
+  m.setAttribute('aria-label', 'Ahead in ' + pcOf(ahead, 0) + ' of markets, behind in ' +
+    pcOf(mc.behindRate, 0) + (mc.tiedRate > 0.005 ? ', level in ' + pcOf(mc.tiedRate, 0) : ''));
+  $('#meterL').textContent = 'Ahead ' + pcOf(ahead, 0);
+  $('#meterR').textContent = 'Behind ' + pcOf(mc.behindRate, 0);
+
+  var note = $('#riskNote'), bad = false, txt2;
+  if (state.vol === 0){
+    txt2 = 'With volatility at zero every year returns exactly ' + pc(state.ret, 2) +
+      '. Real markets do not, and the order the good and bad years arrive in matters ' +
+      'to a geared position far more than it does to an unleveraged one — a bad first ' +
+      'decade is paid for with interest the whole way.';
+  } else if (state.mode === 'margin' && mc.callRate > 0.02){
+    bad = true;
+    txt2 = 'A margin call arrives in <b>' + pcOf(mc.callRate, 1) + '</b> of these markets, and it arrives ' +
+      'when prices are lowest — the loan is settled by selling into the fall, which locks the loss in ' +
+      'and realises a capital gain on whatever is sold. Lowering the starting gearing is the only ' +
+      'control here that reduces the chance rather than the consequence.';
+  } else if (mc.tiedRate > 0.5){
+    txt2 = 'The borrowing changes nothing measurable in <b>' + pcOf(mc.tiedRate, 0) + '</b> of these ' +
+      'markets. At ' + pc(state.ret, 2) + ' expected against ' + pc(loanRate(), 2) + ' borrowed there is ' +
+      'no spread to work with, so the geared plan and the plain one land in the same place.';
+  } else if (mc.behindRate >= 0.5){
+    bad = true;
+    txt2 = 'The borrowing left you behind in <b>' + pcOf(mc.behindRate, 0) + '</b> of these markets. ' +
+      'At ' + pc(state.ret, 2) + ' expected against ' + pc(loanRate(), 2) +
+      ' borrowed, the spread is too thin to pay for the risk it carries.';
+  } else if (mc.benefit.p10 < 0){
+    txt2 = 'The middle of this distribution is comfortable, but one market in ten leaves you <b>' +
+      money(Math.abs(mc.benefit.p10 / k)) + ' worse off</b> than never borrowing. That is the ' +
+      'price of admission, and it has to be affordable in the year it happens, not on average.';
+  } else {
+    txt2 = 'Ahead in <b>' + pcOf(ahead, 0) + '</b> of these markets, and the worst of the thousand still ' +
+      'came out ' + money(mc.benefit.worst / k) + ' ahead. That is a wide margin — worth checking it ' +
+      'survives a lower return assumption and a higher interest rate before believing it.';
+  }
+  note.innerHTML = txt2;
+  note.className = 'note' + (bad ? ' bad' : '');
+}
+
+/* ================================================================
+   11. TABLE
+   ================================================================ */
+function tableCols(){
+  var base = ['Year', 'Portfolio'];
+  if (state.mode === 'recycle') base.push('Home loan', 'Deductible loan');
+  else base.push('Loan');
+  base.push('Interest', 'Income', 'Tax saved', 'Net worth', 'Without it');
+  if (state.mode === 'margin') base.push('LVR');
+  else if (state.mode === 'recycle') base.push('Deductible');
+  return base;
+}
+function renderTable(sim){
+  var COLS = tableCols();
+  var head = $('#tableHead');
+  head.textContent = '';
+  COLS.forEach(function(cn){
+    var th = document.createElement('th');
+    th.textContent = cn;
+    th.setAttribute('scope', 'col');
+    head.appendChild(th);
+  });
+  var body = $('#tableBody');
+  body.textContent = '';
+  sim.rows.forEach(function(r){
+    var k = defl(r.y);
+    var cells = ['Year ' + r.y, money(r.port / k)];
+    if (state.mode === 'recycle') cells.push(money(r.home / k), money(r.inv / k));
+    else cells.push(money(r.inv / k));
+    cells.push(money(r.invInt / k), money(r.divs / k), money(r.saved / k),
+               money(r.exitLev / k), money(r.exitBase / k));
+    if (state.mode === 'margin') cells.push(pcOf(r.lvr, 1));
+    else if (state.mode === 'recycle') cells.push(pcOf(r.dedShare, 0));
+    var tr = document.createElement('tr');
+    if (r.call) tr.className = 'called';
+    cells.forEach(function(cv, i){
+      var td = document.createElement('td');
+      td.textContent = cv;
+      if (COLS[i] === 'Net worth') td.className = 'em';
+      if (r.saved < 0 && COLS[i] === 'Tax saved') td.className = 'bad';
+      if (r.call && COLS[i] === 'LVR') td.className = 'bad';
+      tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  });
+  var y = sim.p.years, k2 = defl(y);
+  var tot = sim.rows.reduce(function(a, r){
+    a.i += r.invInt / defl(r.y); a.d += r.divs / defl(r.y); a.s += r.saved / defl(r.y);
+    return a;
+  }, { i:0, d:0, s:0 });
+  var totCells = ['All ' + y + (y === 1 ? ' year' : ' years'), '—'];
+  if (state.mode === 'recycle') totCells.push('—', '—'); else totCells.push('—');
+  totCells.push(money(tot.i), money(tot.d), money(tot.s),
+                money(sim.exitLev / k2), money(sim.exitBase / k2));
+  while (totCells.length < COLS.length) totCells.push('—');
+  var tr2 = document.createElement('tr');
+  tr2.className = 'tot';
+  totCells.forEach(function(cv){
+    var td = document.createElement('td');
+    td.textContent = cv;
+    tr2.appendChild(td);
+  });
+  body.appendChild(tr2);
+
+  $('#tableSub').textContent = 'End of each year' + (state.basis === 'real' ? ", in today's money" : '') +
+    '. Net worth is after selling up, paying the capital gains tax and clearing the debt — the same ' +
+    'basis on both sides.' + (sim.calls.length ? ' Years marked ⚠ brought a margin call.' : '');
+}
+
+/* ================================================================
+   12. EXPORT
+   ================================================================ */
+function csvCell(v){
+  var s = String(v == null ? '' : v);
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function buildCSV(sim, mc, be){
+  var real = state.basis === 'real';
+  var L = [];
+  L.push(['Debt recycling and leverage calculator']);
+  L.push(['Generated', new Date().toISOString().slice(0, 10)]);
+  L.push(['Strategy', { recycle:'Debt recycling', equity:'Borrow to invest', margin:'Margin loan' }[state.mode]]);
+  L.push(['Tax year', TAX.financialYear, 'Australian resident']);
+  L.push(['Currency', 'AUD']);
+  L.push(['Figures shown in', real ? "today's money (inflation-adjusted)" : 'actual (nominal) amounts']);
+  L.push(['Disclaimer', 'General information and education only - not financial, investment, tax or legal advice. ' +
+    'Gearing magnifies losses as well as gains. A hypothetical illustration built from the figures entered, on ' +
+    'simplifying assumptions including annual steps, an average cost base, and capital gains discounted on the ' +
+    'assumption every parcel was held more than twelve months. Interest is deductible only where borrowed funds ' +
+    'are genuinely used to produce assessable income. Provided "as is" with no warranty of any kind; no ' +
+    'responsibility or liability is accepted for any error, omission, or loss arising from reliance on these ' +
+    'figures. Verify before acting and seek advice from a licensed financial adviser and a registered tax agent.']);
+  L.push([]);
+  L.push(['--- inputs ---']);
+  L.push(['Taxable salary', state.salary, 'growing at ' + state.salaryGrowth + '% a year']);
+  L.push(['Couple or family thresholds', state.family ? 'yes' : 'no']);
+  L.push(['Private hospital cover', state.cover ? 'yes' : 'no (Medicare levy surcharge applies)']);
+  L.push(['Years', state.years]);
+  L.push(['Spare cash each year', state.surplus, state.indexSurplus ? 'rising with inflation' : 'flat']);
+  L.push(['Tax saving reinvested', state.directTax ? 'yes' : 'no']);
+  if (state.mode === 'recycle'){
+    L.push(['Home loan balance', state.homeBal]);
+    L.push(['Home loan rate (%)', state.homeRate]);
+    L.push(['Home loan years left', state.homeTerm]);
+    L.push(['Scheduled repayment', Math.round(pmt(state.homeBal, state.homeRate / 100, state.homeTerm))]);
+    L.push(['Converted now from savings', state.lumpSum]);
+    L.push(['Recycling scheduled principal', state.recyclePrin ? 'yes' : 'no']);
+    L.push(['Split loan rate (%)', state.invRate]);
+  } else if (state.mode === 'equity'){
+    L.push(['Amount borrowed', state.borrow]);
+    L.push(['Loan rate (%)', state.invRate]);
+    L.push(['Repayment type', state.io ? 'interest only' : 'principal and interest over ' + state.loanTerm + ' years']);
+  } else {
+    L.push(['Own capital', state.ownCap]);
+    L.push(['Starting LVR (%)', state.lvrTarget]);
+    L.push(['Margin loan drawn', Math.round(state.ownCap * (state.lvrTarget / 100) / Math.max(1e-9, 1 - state.lvrTarget / 100))]);
+    L.push(['Margin rate (%)', state.marginRate]);
+    L.push(["Lender's maximum LVR (%)", state.maxLvr]);
+    L.push(['Buffer before a call (%)', state.buffer]);
+    L.push(['Gearing up as it grows', state.topUp ? 'yes' : 'no']);
+  }
+  L.push(['Total return (%)', state.ret]);
+  L.push(['Of which income yield (%)', state.divYield, state.franked + '% franked']);
+  L.push(['Annual fee (%)', state.fee]);
+  L.push(['Volatility (%)', state.vol]);
+  L.push(['Inflation (%)', state.inflation]);
+  L.push(['Tax thresholds indexed', state.indexTax ? 'yes' : 'no']);
+  L.push([]);
+  L.push(['--- result ---']);
+  var k = real ? defl(state.years) : 1;
+  L.push(['Net worth with the borrowing', Math.round(sim.exitLev / k), 'after CGT and after clearing the debt']);
+  L.push(['Net worth without it', Math.round(sim.exitBase / k), 'same cash, no borrowing']);
+  L.push(['Difference', Math.round(sim.benefit / k)]);
+  L.push(['Break-even return (% p.a.)', be.below ? 'below -20' : be.above ? 'above 40' : Math.round(be.rate * 10000) / 100]);
+  L.push(['Ahead in (% of 1,000 markets)', Math.round(mc.aheadRate * 1000) / 10]);
+  L.push(['Typical difference (median of 1,000)', Math.round(mc.benefit.p50 / k)]);
+  L.push(['Bad market (10th percentile)', Math.round(mc.benefit.p10 / k)]);
+  L.push(['Worst of the 1,000', Math.round(mc.benefit.worst / k)]);
+  if (state.mode === 'margin'){
+    L.push(['Markets with a margin call (%)', Math.round(mc.callRate * 1000) / 10]);
+    L.push(['Worst gearing, median (%)', Math.round(mc.medianWorstLvr * 1000) / 10]);
+    L.push(['Worst gearing, 95th percentile (%)', Math.round(mc.p95WorstLvr * 1000) / 10]);
+  }
+  L.push(['Markets where the loan outgrew the portfolio (%)', Math.round(mc.underRate * 1000) / 10]);
+  L.push([]);
+  L.push(['--- year by year ---']);
+  L.push(['Year', 'Portfolio', 'Home loan', 'Deductible loan', 'Total debt', 'Deductible share (%)',
+          'Deductible interest', 'Investment income', 'Franking credits', 'Tax saved', 'CGT',
+          'Units sold', 'LVR (%)', 'Margin call', 'Net worth after tax', 'Net worth without borrowing']);
+  sim.rows.forEach(function(r){
+    var d = defl(r.y);
+    L.push([r.y, Math.round(r.port / d), Math.round(r.home / d), Math.round(r.inv / d),
+            Math.round(r.debt / d), Math.round(r.dedShare * 1000) / 10,
+            Math.round(r.invInt / d), Math.round(r.divs / d), Math.round(r.frk / d),
+            Math.round(r.saved / d), Math.round(r.cgt / d), Math.round(r.sold / d),
+            Math.round(r.lvr * 1000) / 10, r.call ? 'yes' : '',
+            Math.round(r.exitLev / d), Math.round(r.exitBase / d)]);
+  });
+  return L.map(function(r){ return r.map(csvCell).join(','); }).join('\r\n');
+}
+function downloadCSV(){
+  var csv = buildCSV(currentSim, currentMc, currentBe);
+  var name = 'leverage-' + state.mode + '-' + state.years + 'y-' + state.ret + 'pc.csv';
+  try {
+    var blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name; a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); a.parentNode.removeChild(a); }, 400);
+  } catch(e){
+    var w = window.open('', '_blank');
+    if (w){ w.document.title = name; w.document.body.style.whiteSpace = 'pre'; w.document.body.textContent = csv; }
+    else alert('Could not start the download — copy the table from the page instead.');
+  }
+}
+
+/* ================================================================
+   13. HINTS
+   The sidebar explains itself from the numbers, not from generic prose: every
+   hint below is derived from the current scenario.
+   ================================================================ */
+function syncHints(sim){
+  var p = params(state);
+  var ix = 1;
+  var mr = marginalRate(state.salary, { ix: ix, family: state.family, cover: state.cover });
+  $('#mrHint').textContent = 'On ' + money(state.salary) + ' your marginal rate is ' + pcOf(mr, 0) +
+    ', so every dollar of deductible interest is worth ' + Math.round(mr * 100) + 'c back. FY ' +
+    TAX.financialYear + ' rates.';
+
+  var mlsR = state.cover ? 0 : mlsRate(state.salary, state.family, ix);
+  $('#mlsHint').textContent = state.cover
+    ? 'With cover there is no surcharge. Without it, a net investment loss is added back — so negative gearing would not get you under a tier.'
+    : mlsR > 0
+      ? 'The surcharge applies at ' + pcOf(mlsR, 2) + ' of taxable income, and a net investment loss is added back, so the deduction will not get you under the tier.'
+      : 'Below the surcharge thresholds at this income. Investment income can lift you over one.';
+
+  if (state.mode === 'recycle'){
+    var P = pmt(state.homeBal, state.homeRate / 100, state.homeTerm);
+    $('#pmtHint').textContent = state.homeBal > 0
+      ? 'A level repayment of ' + money(P) + ' a year (' + money(P / 12) + ' a month), of which ' +
+        money(state.homeBal * state.homeRate / 100) + ' is interest in year one.'
+      : 'Nothing owing, so there is nothing to recycle — this strategy needs a non-deductible loan to convert.';
+    var first = sim.rows[0];
+    $('#prinHint').textContent = state.recyclePrin
+      ? 'Every principal dollar is drawn again and invested, so the total debt stays at ' +
+        money(sim.rows[0].debt) + ' the whole way and only its purpose changes.'
+      : 'The scheduled principal stays repaid, so the total debt falls as well as converting — slower, and less exposed.';
+  }
+  if (state.mode === 'equity'){
+    $('#ioHint').textContent = state.io
+      ? 'Nothing comes off the principal, so the whole ' + money(state.borrow) +
+        ' is still owing in year ' + state.years + ' and every year of interest is deductible in full.'
+      : 'Repaid over ' + state.loanTerm + ' years at ' +
+        money(pmt(state.borrow, state.invRate / 100, state.loanTerm)) +
+        ' a year, so the deduction shrinks as the balance does.';
+  }
+  if (state.mode === 'margin'){
+    var loan = state.ownCap * (state.lvrTarget / 100) / Math.max(1e-9, 1 - state.lvrTarget / 100);
+    $('#lvrHint').textContent = state.lvrTarget > 0
+      ? money(state.ownCap) + ' of your own plus ' + money(loan) + ' borrowed buys ' +
+        money(state.ownCap + loan) + ' of assets.'
+      : 'No borrowing at this setting — the same as investing your own capital.';
+    var fall = 1 - (state.lvrTarget / 100) / Math.min(0.999, (state.maxLvr + state.buffer) / 100);
+    $('#callHint').textContent = 'From ' + pc(state.lvrTarget, 0) + ' gearing, a fall of about ' +
+      pc(fall * 100, 0) + ' takes you to the ' + pc(state.maxLvr + state.buffer, 0) +
+      ' call line. Settling a call costs more than the gap, because selling shrinks the portfolio too.';
+  }
+
+  $('#retHint').textContent = 'Total return including income, before fees and tax. Your borrowing costs ' +
+    pc(loanRate(), 2) + ', which after the deduction is about ' +
+    pc(loanRate() * (1 - mr), 2) + ' — that is the number the return has to beat.';
+  var frkCents = Math.round(frankingOn(1, state.franked / 100) * 100);
+  $('#yieldHint').textContent = 'Capital growth is the rest: ' + pc(Math.max(0, state.ret - state.divYield), 2) +
+    ' a year. Franking adds ' + frkCents + 'c of credit per dollar of dividend' +
+    (mr < 0.30 ? ' — above the tax on it at your rate, so some comes back as cash.' : '.');
+  $('#taxHint').textContent = state.indexTax
+    ? 'Thresholds keep pace with inflation, which is roughly what has happened over the long run.'
+    : 'Thresholds frozen. Pay rises walk you up the brackets, which raises the value of the deduction and the tax on the income.';
+
+  var noteEl = $('#modeNote');
+  noteEl.textContent = {
+    recycle: 'Pay cash off the home loan, then draw it again through a separate split and invest it. ' +
+      'The debt stays the same size; the interest on the converted part becomes deductible. Compared ' +
+      'against putting the same cash into extra repayments and no investing.',
+    equity: 'Draw a lump against your home and invest it. Deductible interest, no margin calls, but ' +
+      'your house is the security. Compared against investing the same spare cash without borrowing.',
+    margin: 'Borrow against the portfolio itself. Higher rate, and the lender can force a sale if the ' +
+      'gearing climbs past its limit. Compared against investing your own capital alone.'
+  }[state.mode];
+}
+
+/* ================================================================
+   14. WIRING
+   ================================================================ */
+var currentSim = null, currentMc = null, currentBe = null;
+var rafId = 0, persistTimer = 0;
+var MC_PATHS = 1000;
+var mcCache = { key:null, res:null };
+
+function mcFor(p){
+  var key = JSON.stringify(p);
+  if (mcCache.key === key) return mcCache.res;
+  var res = monteCarlo(p, MC_PATHS);
+  mcCache = { key: key, res: res };
+  return res;
+}
+
+function render(){
+  hideTipsExcept(null);   /* the numbers behind an open readout have just moved */
+  var p = params(state);
+  currentSim = project(p);
+  currentMc  = mcFor(p);
+  currentBe  = breakeven(p);
+  renderHero(currentSim, currentMc, currentBe);
+  renderNet(currentSim, currentMc);
+  renderRisk(currentSim, currentMc);
+  renderCost(currentSim);
+  renderDebt(currentSim);
+  renderSens(currentSim, currentBe);
+  renderTable(currentSim);
+  syncHints(currentSim);
+}
+function scheduleRender(){
+  if (rafId) return;
+  rafId = requestAnimationFrame(function(){ rafId = 0; render(); });
+}
+function afterChange(){
+  scheduleRender();
+  clearTimeout(persistTimer);
+  persistTimer = setTimeout(persist, 400);
+}
+
+function displayValue(key){
+  var el = document.getElementById(key);
+  return el.getAttribute('data-kind') === 'money' ? plain(state[key])
+       : String(Math.round(state[key] * 100) / 100);
+}
+function syncOne(key){
+  var el = document.getElementById(key);
+  if (el) el.value = displayValue(key);
+  var rng = document.getElementById(key + '_r');
+  if (rng) rng.value = String(clamp(state[key], +rng.min, +rng.max));
+}
+var NUM_KEYS = ['salary','salaryGrowth','years','homeBal','homeRate','homeTerm','lumpSum',
+                'borrow','invRate','loanTerm','ownCap','lvrTarget','marginRate','maxLvr','buffer',
+                'surplus','ret','divYield','franked','fee','vol','inflation'];
+function syncInputs(){
+  NUM_KEYS.forEach(syncOne);
+  Object.keys(BOOL_KEYS).forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.checked = !!state[id];
+  });
+  document.getElementById('mode-' + state.mode).checked = true;
+  document.getElementById(state.basis === 'real' ? 'basis-real' : 'basis-nom').checked = true;
+  $('#fsRecycle').hidden = state.mode !== 'recycle';
+  $('#fsEquity').hidden  = state.mode !== 'equity';
+  $('#fsMargin').hidden  = state.mode !== 'margin';
+  /* the repayment term only means something on a P&I loan */
+  $('#termRow').hidden = !!state.io;
+  syncDisable();
+}
+/* Nothing to recycle with no home loan, and nothing to gear with no capital:
+   both halves of that state — the disabled attribute and the dimming — live
+   here, so a change can never clear one and leave the other stuck on. */
+function syncDisable(){
+  var offRecycle = state.mode === 'recycle' && state.homeBal <= 0;
+  ['recyclePrin','lumpSum','lumpSum_r','homeRate','homeTerm'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.disabled = offRecycle;
+  });
+  var f = $('#lumpSum') && $('#lumpSum').closest('.field');
+  if (f) f.classList.toggle('has-off', offRecycle);
+  var offTop = state.mode === 'margin' && state.lvrTarget <= 0;
+  ['topUp','marginRate','maxLvr','buffer'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.disabled = offTop;
+  });
+}
+
+/* Rewrite a money field in place while it is being typed in, keeping the
+   caret the same number of digits from the left so the separators appearing
+   underneath never push it out of position. */
+function regroup(el, out){
+  var before = el.value.slice(0, el.selectionStart || 0).replace(/[^0-9]/g, '').length;
+  if (el.value === out) return;
+  el.value = out;
+  var pos = out.length, seen = 0;
+  if (before <= 0){
+    pos = 0;
+  } else {
+    for (var i = 0; i < out.length; i++){
+      var ch = out.charCodeAt(i);
+      if (ch >= 48 && ch <= 57 && ++seen === before){ pos = i + 1; break; }
+    }
+  }
+  try { el.setSelectionRange(pos, pos); } catch(e){}
+}
+function onNumInput(el){
+  var key = el.getAttribute('data-key');
+  /* money fields hold whole dollars, so strip every non-digit: en-AU groups
+     with a comma and it must never be read as a decimal point. Percent and
+     year fields keep the point. */
+  var isMoney = el.getAttribute('data-kind') === 'money';
+  var raw = isMoney ? el.value.replace(/[^0-9]/g, '') : el.value.replace(/[^0-9.]/g, '');
+  var n = parseFloat(raw);
+  if (!isFinite(n)) n = 0;
+  var lim = LIMITS[key] || [0, 1e12];
+  n = clamp(n, lim[0], lim[1]);
+  if (INT_KEYS[key]) n = Math.round(n);
+  state[key] = n;
+  if (isMoney) regroup(el, raw === '' ? '' : plain(n));
+  var rng = document.getElementById(key + '_r');
+  if (rng) rng.value = String(clamp(n, +rng.min, +rng.max));
+  afterEdit(key);
+}
+function onRange(el){
+  var key = el.getAttribute('data-for');
+  var n = parseFloat(el.value);
+  if (INT_KEYS[key]) n = Math.round(n);
+  state[key] = n;
+  var inp = document.getElementById(key);
+  if (inp) inp.value = displayValue(key);
+  afterEdit(key);
+}
+/* The starting LVR cannot sit above the call line, so moving either end of
+   that relationship has to pull the other back into range and show it. */
+function afterEdit(key){
+  var before = state.lvrTarget;
+  reconcile();
+  if (state.lvrTarget !== before) syncOne('lvrTarget');
+  if (key === 'homeBal' || key === 'lvrTarget') syncDisable();
+  afterChange();
+}
+
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  var mt = document.querySelector('meta[name="theme-color"]');
+  if (mt) mt.setAttribute('content', t === 'dark' ? '#272B2F' : '#F8F8F8');
+  $('#themeTxt').textContent = t === 'dark' ? 'Light' : 'Dark';
+  $('#themeBtn').setAttribute('aria-pressed', String(t === 'light'));
+  $('#themeIcon').innerHTML = t === 'dark'
+    ? '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"></path>'
+    : '<path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8z"></path>';
+  try { localStorage.setItem('alc.theme', t); } catch(e){}
+}
+
+function hoverNet(clientX){
+  if (!N) return;
+  var sr = N.svg.getBoundingClientRect();
+  if (!sr.width) return;
+  var mx = (clientX - sr.left) * (N.W / sr.width);
+  var frac = (mx - N.L) / N.plotW;
+  netAt(Math.round(clamp(frac, 0, 1) * (N.LEV.length - 1)));
+}
+function clearNetHover(){
+  if (!N) return;
+  var l = N.svg.querySelector('#nHover');
+  if (l) l.innerHTML = '';
+  N.i = -1;
+}
+function hoverBand(ctx, clientX, at, hide){
+  if (!ctx) return;
+  var sr = ctx.svg.getBoundingClientRect();
+  if (!sr.width) return;
+  var mx = (clientX - sr.left) * (ctx.W / sr.width);
+  var k = Math.floor((mx - ctx.L) / ctx.band);
+  if (k < 0 || k >= ctx.bars.length){ hide(); return; }
+  at(k);
+}
+function hoverDebt(clientX){
+  if (!D) return;
+  var sr = D.svg.getBoundingClientRect();
+  if (!sr.width) return;
+  var mx = (clientX - sr.left) * (D.W / sr.width);
+  var frac = (mx - D.L) / D.plotW;
+  debtAt(Math.round(clamp(frac, 0, 1) * D.years));
+}
+function clearDebtHover(){
+  if (!D) return;
+  var l = D.svg.querySelector('#dHover');
+  if (l) l.innerHTML = '';
+  D.i = -1;
+}
+/* One keyboard handler for every chart: the charts differ in what they draw,
+   not in how you walk along them. */
+function wireKeys(svgSel, count, at, hide, opener){
+  $(svgSel).addEventListener('keydown', function(e){
+    var n = count(), i = opener();
+    var step = e.shiftKey ? Math.max(1, Math.round(n / 8)) : 1, used = true;
+    if (e.key === 'ArrowRight') i += step;
+    else if (e.key === 'ArrowLeft') i -= step;
+    else if (e.key === 'Home') i = 0;
+    else if (e.key === 'End') i = n - 1;
+    else if (e.key === 'Escape'){ hide(); return; }
+    else used = false;
+    if (!used) return;
+    e.preventDefault();
+    at(clamp(i, 0, n - 1));
+  });
+  $(svgSel).addEventListener('blur', hide);
+}
+
+function init(){
+  var storedTheme = null;
+  try { storedTheme = localStorage.getItem('alc.theme'); } catch(e){}
+  var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+  setTheme(storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : (prefersLight ? 'light' : 'dark'));
+
+  if (!parseHash()) loadStored();
+  reconcile();
+  syncInputs();
+  render();
+  persist();
+
+  var form = $('#inputs');
+  form.addEventListener('submit', function(e){ e.preventDefault(); });
+  form.addEventListener('input', function(e){
+    var t = e.target;
+    if (t.type === 'range') onRange(t);
+    else if (t.getAttribute && t.getAttribute('data-kind')) onNumInput(t);
+  });
+  form.addEventListener('change', function(e){
+    var t = e.target;
+    if (t.type === 'checkbox'){
+      var key = t.getAttribute('data-key');
+      if (!key) return;
+      state[key] = t.checked;
+      if (key === 'io') $('#termRow').hidden = !!state.io;
+      afterChange();
+    }
+  });
+  form.addEventListener('focusin', function(e){
+    if (e.target.getAttribute && e.target.getAttribute('data-kind')) e.target.select();
+  });
+  form.addEventListener('focusout', function(e){
+    if (e.target.getAttribute && e.target.getAttribute('data-kind')) syncOne(e.target.getAttribute('data-key'));
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="mode"]'), function(r){
+    r.addEventListener('change', function(){
+      if (!this.checked) return;
+      state.mode = this.value;
+      reconcile();
+      syncInputs();
+      afterChange();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="basis"]'), function(r){
+    r.addEventListener('change', function(){
+      if (!this.checked) return;
+      state.basis = this.value;
+      afterChange();
+    });
+  });
+  $('#themeBtn').addEventListener('click', function(){
+    setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    render();
+  });
+  $('#resetBtn').addEventListener('click', function(){
+    var basis = state.basis, pat = state.patterns, mode = state.mode;
+    state = Object.assign({}, DEFAULTS, { basis: basis, patterns: pat, mode: mode });
+    syncInputs();
+    render();
+    persist();
+  });
+  /* scroll to the disclaimer without putting "#disclaimer" in the address bar —
+     the hash carries the scenario, and a copied link must keep carrying it */
+  var dLink = document.querySelector('a[href="#disclaimer"]');
+  if (dLink) dLink.addEventListener('click', function(e){
+    e.preventDefault();
+    var el = $('#disclaimer');
+    if (!el) return;
+    var slow = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    try { el.scrollIntoView({ behavior: slow ? 'auto' : 'smooth', block: 'start' }); }
+    catch(err){ el.scrollIntoView(); }
+  });
+  $('#printBtn').addEventListener('click', function(){ window.print(); });
+  $('#csvBtn').addEventListener('click', downloadCSV);
+  $('#linkBtn').addEventListener('click', function(){
+    clearTimeout(persistTimer); persist();
+    var url = location.href;
+    var say = function(msg){
+      $('#linkTxt').textContent = msg;
+      setTimeout(function(){ $('#linkTxt').textContent = 'Copy link'; }, 1900);
+    };
+    var fallback = function(){
+      var ta = document.createElement('textarea');
+      ta.value = url; ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta);
+      say(ok ? 'Copied' : 'Copy failed');
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(function(){ say('Copied'); }, fallback);
+    } else fallback();
+  });
+
+  /* ---- readouts ---- */
+  /* A tap outside the charts is how a readout gets dismissed on a phone;
+     a tap on another chart hands the readout over to that one. */
+  document.addEventListener('pointerdown', function(e){
+    var t = e.target;
+    hideTipsExcept(t && t.closest ? t.closest('.chart-wrap') : null);
+  });
+
+  var nw = $('#netWrap');
+  var hideNet = function(){ hideTip('#netTip'); clearNetHover(); };
+  nw.addEventListener('pointermove', function(e){ hoverNet(e.clientX); });
+  nw.addEventListener('pointerdown', function(e){ hoverNet(e.clientX); });
+  wireTip(nw, hideNet);
+  wireKeys('#netSvg', function(){ return N ? N.LEV.length : 0 }, netAt, hideNet,
+           function(){ return N && N.i >= 0 ? N.i : (N ? N.LEV.length - 1 : 0); });
+  $('#netSvg').addEventListener('focus', function(){ if (N && N.i < 0) netAt(N.LEV.length - 1); });
+
+  var cw = $('#costWrap');
+  var hideCost = function(){ hideTip('#costTip'); };
+  cw.addEventListener('pointermove', function(e){ hoverBand(CO, e.clientX, costAt, hideCost); });
+  cw.addEventListener('pointerdown', function(e){ hoverBand(CO, e.clientX, costAt, hideCost); });
+  wireTip(cw, hideCost);
+  wireKeys('#costSvg', function(){ return CO ? CO.bars.length : 0 }, costAt, hideCost,
+           function(){ return CO && CO.i >= 0 ? CO.i : 0; });
+
+  var dw = $('#debtWrap');
+  var hideDebt = function(){ hideTip('#debtTip'); clearDebtHover(); };
+  dw.addEventListener('pointermove', function(e){ hoverDebt(e.clientX); });
+  dw.addEventListener('pointerdown', function(e){ hoverDebt(e.clientX); });
+  wireTip(dw, hideDebt);
+  wireKeys('#debtSvg', function(){ return D ? D.years + 1 : 0 }, debtAt, hideDebt,
+           function(){ return D && D.i >= 0 ? D.i : (D ? D.years : 0); });
+
+  var sw2 = $('#sensWrap');
+  var hideSens = function(){ hideTip('#sensTip'); };
+  sw2.addEventListener('pointermove', function(e){ hoverBand(S, e.clientX, sensAt, hideSens); });
+  sw2.addEventListener('pointerdown', function(e){ hoverBand(S, e.clientX, sensAt, hideSens); });
+  wireTip(sw2, hideSens);
+  wireKeys('#sensSvg', function(){ return S ? S.bars.length : 0 }, sensAt, hideSens,
+           function(){ return S && S.i >= 0 ? S.i : 0; });
+
+  /* responsive re-render, width changes only */
+  var lastW = 0;
+  var onResize = function(){
+    var w = $('#netWrap').clientWidth;
+    if (Math.abs(w - lastW) < 2) return;
+    lastW = w;
+    hideTipsExcept(null);
+    render();
+  };
+  lastW = $('#netWrap').clientWidth;
+  if (window.ResizeObserver){
+    var ro = new ResizeObserver(function(){ onResize(); });
+    ro.observe($('#netWrap'));
+  } else {
+    window.addEventListener('resize', onResize);
+  }
+  /* print on a light ground: SVG colours are baked at render time, so the theme
+     must be light before the charts are rebuilt for paper. */
+  var printPrev = null;
+  window.addEventListener('beforeprint', function(){
+    hideTipsExcept(null);
+    printPrev = document.documentElement.getAttribute('data-theme');
+    if (printPrev === 'dark') document.documentElement.setAttribute('data-theme', 'light');
+    render();
+  });
+  window.addEventListener('afterprint', function(){
+    if (printPrev && printPrev !== document.documentElement.getAttribute('data-theme')){
+      document.documentElement.setAttribute('data-theme', printPrev);
+      render();
+    }
+    printPrev = null;
+  });
+  window.addEventListener('hashchange', function(){
+    if (parseHash()){ syncInputs(); render(); }
+  });
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+
+})();
+</script>

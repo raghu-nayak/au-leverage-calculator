@@ -1,0 +1,99 @@
+{
+  "_about": "Australian resident tax parameters used by the leverage calculator. This file is the single source of truth: tools/embed.py inlines it into index.html between the AU-TAX-JSON markers so the page stays one self-contained file with no network requests. Edit here, then run tools/embed.py.",
+  "country": "AU",
+  "financialYear": "2026-27",
+  "effectiveFrom": "2026-07-01",
+  "effectiveTo": "2027-06-30",
+  "currency": "AUD",
+  "verified": "2026-09-04",
+
+  "residentIncomeTax": {
+    "_note": "Marginal rate scale for Australian residents for tax purposes. upTo is the top of the bracket; null means no upper limit. The lowest positive rate fell from 16% to 15% on 1 July 2026 and is legislated to fall again to 14% on 1 July 2027.",
+    "taxFreeThreshold": 18200,
+    "brackets": [
+      { "upTo": 18200, "rate": 0.00 },
+      { "upTo": 45000, "rate": 0.15 },
+      { "upTo": 135000, "rate": 0.30 },
+      { "upTo": 190000, "rate": 0.37 },
+      { "upTo": null, "rate": 0.45 }
+    ]
+  },
+
+  "medicareLevy": {
+    "_note": "2% of taxable income, with a shade-in of 10c per extra dollar between the lower threshold and the point where the full 2% is cheaper. Not reduced by tax offsets.",
+    "rate": 0.02,
+    "shadeInRate": 0.10,
+    "lowerThreshold": {
+      "single": 28011,
+      "family": 47238,
+      "singleSeniorPensioner": 44268,
+      "familySeniorPensioner": 61623,
+      "perDependentChild": 4338
+    }
+  },
+
+  "medicareLevySurcharge": {
+    "_note": "Payable if you have no private hospital cover. Charged on income for MLS purposes, which is taxable income PLUS reportable fringe benefits, reportable employer super contributions, and — the part that matters to a geared investor — any net financial investment loss added back. Negative gearing therefore does not reduce your MLS.",
+    "addsBackNetInvestmentLoss": true,
+    "familyThresholdPerChildAfterFirst": 1500,
+    "tiers": [
+      { "tier": "base", "singleFrom": 0,      "familyFrom": 0,      "rate": 0.0000 },
+      { "tier": "1",    "singleFrom": 105000, "familyFrom": 210000, "rate": 0.0100 },
+      { "tier": "2",    "singleFrom": 123000, "familyFrom": 246000, "rate": 0.0125 },
+      { "tier": "3",    "singleFrom": 164000, "familyFrom": 328000, "rate": 0.0150 }
+    ]
+  },
+
+  "lowIncomeTaxOffset": {
+    "_note": "Non-refundable: it can reduce income tax to nil but never below, and it does not reduce the Medicare levy.",
+    "max": 700,
+    "taper1": { "from": 37500, "rate": 0.05 },
+    "taper2": { "from": 45000, "rate": 0.015 }
+  },
+
+  "capitalGains": {
+    "_note": "Individuals get a 50% discount on a gain from an asset held more than 12 months. The discounted gain is added to taxable income and taxed at marginal rates, so the effective top rate on a discounted gain is 23.5% (47% / 2, levy included). Capital losses offset capital gains only, and are applied before the discount.",
+    "individualDiscount": 0.5,
+    "minimumHoldingDays": 366,
+    "lossesOffsetGainsOnly": true,
+    "discountAppliedAfterLosses": true
+  },
+
+  "franking": {
+    "_note": "A franked dividend carries a credit for company tax already paid. The credit is grossed up into assessable income and then allowed as a refundable offset, so an investor on a marginal rate below the company rate gets cash back. Large listed companies pay 30%; a base rate entity pays 25%.",
+    "companyTaxRate": 0.30,
+    "baseRateEntityTaxRate": 0.25,
+    "creditsRefundable": true,
+    "grossUpFormula": "credit = cashDividend * frankedPortion * rate / (1 - rate)"
+  },
+
+  "interestDeductions": {
+    "_note": "Interest is deductible to the extent the borrowed money is used to produce assessable income. Deductibility is decided by the use of the funds, not by the security behind the loan — which is why a loan secured on your home can be deductible and a redraw on an investment split can stop being deductible the moment it pays for something private. Mixing purposes in one account creates a mixed-purpose loan and every repayment is apportioned across it, which is the whole reason debt recycling uses a separate split. This is general information, not advice.",
+    "deductibleWhenUsedToProduceIncome": true,
+    "determinedByUseOfFunds": true,
+    "mixedPurposeLoanApportioned": true,
+    "capitalProtectedBorrowingsSplit": "Interest on a capital protected borrowing is split: the part attributable to the capital protection is a capital cost, not a deduction.",
+    "prepaidInterestRule": "An individual investor may generally prepay up to 12 months of interest and claim it in the year of payment."
+  },
+
+  "netInvestmentLossAddBack": {
+    "_note": "A net financial investment loss (deductions on shares exceeding the income they produced) is added back when working out entitlement to a range of measures. Negative gearing reduces your income tax, but not these.",
+    "appliesTo": [
+      "Medicare levy surcharge",
+      "Division 293 super contributions tax",
+      "private health insurance rebate",
+      "Family Tax Benefit and child care subsidy",
+      "HELP/HECS repayment income",
+      "super co-contribution and spouse contribution offsets"
+    ]
+  },
+
+  "sources": [
+    { "what": "Resident income tax brackets 2026-27", "url": "https://www.ato.gov.au/tax-rates-and-codes/tax-rates-australian-residents" },
+    { "what": "Medicare levy low-income thresholds 2026-27", "url": "https://www.ato.gov.au/individuals-and-families/medicare-and-private-health-insurance/medicare-levy" },
+    { "what": "Medicare levy surcharge thresholds and rates", "url": "https://www.ato.gov.au/individuals-and-families/medicare-and-private-health-insurance/medicare-levy-surcharge/medicare-levy-surcharge-income-thresholds-and-rates" },
+    { "what": "CGT discount", "url": "https://www.ato.gov.au/individuals-and-families/investments-and-assets/capital-gains-tax/cgt-discount" },
+    { "what": "Franking credits and the gross-up", "url": "https://www.ato.gov.au/individuals-and-families/investments-and-assets/investing-in-shares/dividends" },
+    { "what": "Interest deductibility and mixed-purpose loans", "url": "https://www.ato.gov.au/law/view/document?docid=TXR/TR20003/NAT/ATO/00001" }
+  ]
+}
