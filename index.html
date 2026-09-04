@@ -54,6 +54,10 @@ body{
 }
 h1,h2,h3,p{margin:0}
 button,input,select{font:inherit;color:inherit}
+/* The UA rule for this loses to any author rule that sets display, so .check
+   and .row2 were quietly keeping hidden elements on screen. Anything given the
+   attribute means it, wherever it sits. */
+[hidden]{display:none!important}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .skip{position:absolute;left:12px;top:-48px;z-index:20;background:var(--accent);color:var(--accent-ink);padding:8px 14px;border-radius:var(--r);font-weight:700;transition:top var(--dur)}
 .skip:focus{top:12px}
@@ -763,7 +767,7 @@ footer a,.disclaimer a{color:var(--accent)}   /* --accent-2 gold falls under 4.5
       <li><b>Not every geared investment loan can be called.</b> An equity builder loan is secured by the portfolio, geared to at most 75% of it, and repaid principal and interest over about ten years &mdash; and a fall in the portfolio triggers nothing at all. That is why the worked example loads into <i>borrow to invest</i> rather than into margin mode. What you pay for it is the repayment: principal has to come out of cash flow every year, whatever the market is doing. The gearing limit itself is not modelled, because this mode has no own-contribution field &mdash; the loan buys the whole portfolio, so the example is the borrowed portion on its own.</li>
       <li><b>A year that cannot pay its own interest sells units to cover it</b>, which realises a gain and shrinks the position — the quiet way a geared holding erodes in a flat market. Last year's capital gains tax is paid out of this year's cash, as it is in life.</li>
       <li><b>The range of outcomes</b> draws a fresh return for each year of each of 1,000 runs from a normal distribution around your expected return, and re-runs both sides against it. The seed is fixed, so the same inputs always give the same fan.</li>
-      <li><b>Tax is worked out on one person's income.</b> The couple-or-family switch raises the Medicare levy and surcharge thresholds and does nothing else, so it is hidden while hospital cover has the surcharge switched off and no year&rsquo;s taxable income reaches the levy shade-in &mdash; at that point it cannot change a figure on the page. There is no income splitting, no partner's income, and dependent children (which raise both thresholds again) are not modelled.</li>
+      <li><b>Tax is worked out on one person's income.</b> The couple-or-family switch raises the Medicare levy and surcharge thresholds and does nothing else, and it is shown only when hospital cover is unticked, since cover is what switches the surcharge off. It still lifts the levy shade-in, which cover does not touch, so if a scenario arrives with it switched on and a taxable income low enough for that to bite, the hint beside the checkbox says so. There is no income splitting, no partner's income, and dependent children (which raise both thresholds again) are not modelled.</li>
       <li><b>Rates and inflation can step once.</b> From the year you pick, every borrowing rate moves by the amount you set and holds there, and inflation can move with it. A step rather than a smooth drift because the question it answers is a shock: what a rate rise does to a position that was sized at the old rate. When a home loan's rate moves the lender re-amortises it, and the new repayment is worked out on the schedule the loan would be on had only the minimum ever been paid &mdash; so both sides are held to the same commitment and the comparison cannot tilt towards whichever of them had paid the loan down faster.</li>
       <li><b>Tax parameters are FY 2026-27</b> and live in <code>data/au-tax.json</code> in the repository, inlined into this page so it still makes no network requests. Thresholds are indexed with inflation unless you switch that off.</li>
     </ul>
@@ -2854,9 +2858,9 @@ function syncHints(sim, be){
     : mlsR > 0
       ? 'The surcharge applies at ' + pcOf(mlsR, 2) + ' of taxable income, and a net investment loss is added back, so the deduction will not get you under the tier.'
       : 'Below the surcharge thresholds at this income. Investment income can lift you over one.';
-  if (!familyMatters(sim))
-    mlsTxt += ' The couple-or-family switch is hidden while cover has the surcharge switched off, because the only other thing it does \u2014 lift the Medicare levy shade-in below ' +
-      money(TAX.medicareLevy.lowerThreshold.family * ix) + ' \u2014 cannot reach any year of this scenario.';
+  if (state.cover && state.family && familyReachesTax(sim))
+    mlsTxt += ' Couple or family thresholds came in with this scenario and are still lifting the Medicare levy shade-in to ' +
+      money(TAX.medicareLevy.lowerThreshold.family * ix) + ', which cover does not switch off. Un-tick cover to reach that switch.';
   $('#mlsHint').textContent = mlsTxt;
 
   /* ---- the rate outlook ---- */
@@ -3029,16 +3033,16 @@ function syncInputs(){
   $('#termRow').hidden = !!state.io;
   syncDisable();
 }
-/* The couple-or-family switch does two separate things: it lifts the Medicare
-   levy shade-in and it lifts the surcharge tiers. Hospital cover switches the
-   surcharge off, so with cover ticked the switch can only still reach the
-   answer through the levy — and only while a taxable income is low enough to
-   sit in the shade-in band, since above it the flat 2% binds either way. That
-   makes the test exact rather than a guess about income: ask the levy itself,
-   on the figures each side was actually assessed on. */
-function familyMatters(sim){
-  if (!state.cover) return true;            /* the surcharge tiers are in play */
-  if (!sim) return true;                    /* asked before the first run */
+/* The couple-or-family switch lifts the surcharge tiers, which hospital cover
+   switches off, and it lifts the Medicare levy shade-in, which cover does not.
+   So while it is hidden it can still be moving the levy — only for a taxable
+   income low enough to sit in the shade-in band, since above it the flat 2%
+   binds either way. This says whether that is happening, exactly rather than by
+   guessing at income: ask the levy itself, on the figures each side was
+   actually assessed on. It is why the hint speaks up instead of a number
+   changing with nothing on screen to account for it. */
+function familyReachesTax(sim){
+  if (!sim) return false;
   return sim.rows.some(function(r){
     return [r.ti, r.bTi, r.sal].some(function(ti){
       return medicareLevy(ti, true, r.ix) !== medicareLevy(ti, false, r.ix);
@@ -3061,11 +3065,10 @@ function syncDisable(){
     var el = document.getElementById(id);
     if (el) el.disabled = offTop;
   });
-  /* Left checked, not cleared: the condition for hiding it is precisely that
-     the setting changes no figure, so there is nothing to undo and nothing
-     acting out of sight — un-tick the cover above and it comes back exactly
-     as it was. */
-  $('#familyRow').hidden = !familyMatters(currentSim);
+  /* Only the surcharge thresholds are worth a control, and cover switches the
+     surcharge off. Left checked rather than cleared: un-tick the cover above
+     and the switch comes back exactly as it was. */
+  $('#familyRow').hidden = !!state.cover;
 }
 
 /* Rewrite a money field in place while it is being typed in, keeping the

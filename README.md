@@ -54,6 +54,12 @@ income splitting, no partner's income, and dependent children — which raise bo
 thresholds again — are not modelled. The per-child amounts are in the JSON for
 anyone who wants to add them.
 
+That switch is shown only when hospital cover is unticked, since cover is what
+switches the surcharge off. It still lifts the levy shade-in, which cover does
+not touch, so a scenario arriving with it on and a taxable income low enough for
+that to bite gets a line in the hint saying so — a hidden setting should not be
+able to move a figure with nothing on screen to account for it.
+
 `data/au-tax.json` is the source of truth. The page cannot fetch it at runtime
 without breaking the no-network-requests rule, so
 [`tools/embed.py`](tools/embed.py) inlines the fields the engine reads:
