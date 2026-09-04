@@ -529,7 +529,7 @@ footer a,.disclaimer a{color:var(--accent)}   /* --accent-2 gold falls under 4.5
         </div>
         <input type="range" id="surplus_r" data-for="surplus" min="0" max="200000" step="1000" aria-label="Spare cash each year slider">
         <div class="ticks"><span>A$0</span><span>A$200k</span></div>
-        <p class="hint">Over and above your normal repayments. The plain comparison spends exactly the same amount.</p>
+        <p class="hint" id="surplusHint"></p>
         <label class="check"><input type="checkbox" id="indexSurplus" data-key="indexSurplus"><span>Raise it with inflation each year</span></label>
         <label class="check"><input type="checkbox" id="directTax" data-key="directTax"><span>Put the tax saving straight back in</span></label>
       </div>
@@ -2862,6 +2862,55 @@ function syncHints(sim, be){
     mlsTxt += ' Couple or family thresholds came in with this scenario and are still lifting the Medicare levy shade-in to ' +
       money(TAX.medicareLevy.lowerThreshold.family * ix) + ', which cover does not switch off. Un-tick cover to reach that switch.';
   $('#mlsHint').textContent = mlsTxt;
+
+  /* ---- spare cash ----
+     The field the whole comparison rests on, so it has to say three things the
+     static line it replaced did not: which repayments it is "spare" of, where
+     it actually goes on this side, and that the other side is handed the same. */
+  var y1 = sim.rows[0];
+  /* Only recycling models a home loan at all, so only there is there a minimum
+     repayment to be "spare" of, and only there does the plain side have a loan
+     to make extra repayments against. */
+  var hasHome = state.mode === 'recycle' && state.homeBal > 0;
+  var minRep = hasHome ? pmt(state.homeBal, state.homeRate / 100, state.homeTerm) : 0;
+  var helpers = state.directTax ? 'the dividends and the tax it saves' : 'the dividends';
+  var helpersCap = state.directTax ? 'The dividends and the tax saving' : 'The dividends';
+  var loanWord = state.mode === 'recycle' ? 'the deductible split'
+               : state.mode === 'equity'  ? 'the loan' : 'the margin loan';
+  var carry = y1.invInt + y1.invPrin;
+  /* A P&I loan takes principal out of cash flow too, so calling that figure
+     interest would understate what the year has to find. */
+  var costWord = y1.invPrin > 0.5 ? loanWord + '\u2019s interest and principal'
+                                  : 'the interest on ' + loanWord;
+
+  var sTxt;
+  if (state.surplus > 0){
+    sTxt = money(state.surplus) + ' a year of your own cash to put to work' +
+      (minRep > 0 ? ', on top of the ' + money(minRep) + ' minimum home loan repayment \u2014 ' +
+                    'that is committed whichever way you go, so it is not counted here' : '') + '.';
+  } else {
+    sTxt = minRep > 0
+      ? 'Nothing spare beyond the ' + money(minRep) + ' minimum home loan repayment, which is ' +
+        'committed whichever way you go.'
+      : 'No spare cash at all.';
+  }
+
+  if (isGeared(sim) && carry > 0.5){
+    sTxt += state.surplus > 0
+      ? ' Along with ' + helpers + ' it covers ' + costWord + ' \u2014 ' + money(carry) +
+        ' in year one \u2014 and what is left ' +
+        (state.mode === 'recycle' ? 'comes off the home loan and is drawn again to invest.'
+                                  : 'buys more of the portfolio.')
+      : ' ' + helpersCap + ' have to cover ' + costWord + ' on their own \u2014 ' +
+        money(carry) + ' in year one.';
+    if (state.surplus > 0)
+      sTxt += ' The plain comparison is handed the same ' + money(state.surplus) + ' and puts it into ' +
+        (hasHome ? 'extra home loan repayments, then into the same portfolio once the loan is gone.'
+                 : 'the same portfolio, with no borrowing behind it.');
+  }
+  if (sim.rows.some(function(r){ return r.need > 0.5; }))
+    sTxt += ' It does not stretch in every year here: at least one sells units to make up the difference.';
+  $('#surplusHint').textContent = sTxt;
 
   /* ---- the rate outlook ---- */
   var sh = state.rateShift, nsh = state.inflShift, y0 = state.shiftYear;
