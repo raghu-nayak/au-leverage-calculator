@@ -175,5 +175,7 @@ disclaimer in the page, and speak to a registered tax agent before acting.
 - [Investment growth calculator](https://raghu-nayak.github.io/investment-calc/) —
   what contributions, returns, fees, tax and inflation do over time
 
-## Licence
+## Copyright
 
+Copyright &copy; 2026 Raghu Nayak. All rights reserved. The source is published
+here to be read and checked, not to be reused or redistributed.
