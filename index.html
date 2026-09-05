@@ -3162,25 +3162,65 @@ function regroup(el, out){
   }
   try { el.setSelectionRange(pos, pos); } catch(e){}
 }
+/* Money in this tool is whole dollars, and a grouping separator must never be
+   mistaken for a decimal point — which is what stripping every non-digit was
+   for. That was safe in one direction and wrong in the other: it turned 1234.56
+   into 123456, overstating the figure a hundredfold without saying so, and a
+   European 1.234,56 by a hundred thousand.
+
+   The decimal separator is found instead, and everything after it ignored, so
+   the whole number in the box is always the whole number stored. A separator
+   appearing once is a decimal point; appearing more than once it is grouping,
+   which is what a number can actually contain. Where the reader's own separator
+   is absent, a single one of the other character with one or two digits behind
+   it is read as a decimal point too — 0.75 typed in Berlin, 1234,56 typed in
+   Sydney — because a keypad emits the character it emits, and the alternative
+   is the hundredfold reading. Three digits behind it is grouping either way.
+
+   The tail is handed back so the box can keep showing it: eating the point on
+   the keystroke that types it would put the next digits into the dollars. */
+function moneySep(){
+  try {
+    return new Intl.NumberFormat('en-AU', { minimumFractionDigits:1 })
+             .format(1.1).replace(/[0-9]/g, '') || '.';
+  } catch(e){ return '.'; }
+}
+function splitMoney(v){
+  var src = String(v == null ? '' : v);
+  var neg = /^\s*-/.test(src);
+  var sep = moneySep(), other = sep === ',' ? '.' : ',';
+  var s = src.replace(/[^0-9.,]/g, '');
+  var i = -1, at = s.indexOf(sep);
+  if (at >= 0 && at === s.lastIndexOf(sep)) i = at;
+  if (i < 0){
+    var o = s.indexOf(other);
+    if (o >= 0 && o === s.lastIndexOf(other) && /[.,]\d{1,2}$/.test(s)) i = o;
+  }
+  if (i < 0) return { digits:s.replace(/[^0-9]/g, ''), tail:'', neg:neg };
+  return {
+    digits: s.slice(0, i).replace(/[^0-9]/g, ''),
+    tail: sep + s.slice(i + 1).replace(/[^0-9]/g, '').slice(0, 2),
+    neg: neg
+  };
+}
 function onNumInput(el){
   var key = el.getAttribute('data-key');
-  /* money fields hold whole dollars, so strip every non-digit: en-AU groups
-     with a comma and it must never be read as a decimal point. Percent and
-     year fields keep the point. */
   var isMoney = el.getAttribute('data-kind') === 'money';
   /* A field whose lower limit is below zero has to keep a leading minus, and
      only a leading one: "-2-3" is a typo, not a number. */
   var signed = (LIMITS[key] || [0, 0])[0] < 0;
-  var raw = isMoney ? el.value.replace(/[^0-9]/g, '')
+  var cents = isMoney ? splitMoney(el.value) : null;
+  var raw = isMoney ? ((signed && cents.neg ? '-' : '') + cents.digits)
                     : el.value.replace(signed ? /[^0-9.\-]/g : /[^0-9.]/g, '');
-  if (signed){
+  if (signed && !isMoney){
     var neg = raw.charAt(0) === '-';
     raw = (neg ? '-' : '') + raw.slice(neg ? 1 : 0).split('-')[0];
   }
   var n = parseFloat(raw);
   if (!isFinite(n)) n = 0;
   state[key] = fit(key, n);
-  if (isMoney) regroup(el, raw === '' ? '' : plain(state[key]));
+  if (isMoney) regroup(el, (cents.digits === '' && !cents.tail) ? (cents.neg && signed ? '-' : '')
+                                                               : plain(state[key]) + cents.tail);
   propagate(key);
 }
 /* A number is only worth storing once it is inside the field's own limits and
